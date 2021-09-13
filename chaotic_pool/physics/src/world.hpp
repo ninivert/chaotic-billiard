@@ -3,7 +3,8 @@
 
 #include "globals.h" // EPS
 #include "ball.hpp"
-#include "segment.hpp"
+#include "curve.hpp"
+#include "collider.hpp"
 #include "logger.hpp"
 #include <vector>
 #include <unordered_set>
@@ -31,19 +32,17 @@ class World {
 		unsigned int iter_num = 0;
 
 		while (iter_num++ < MAX_COLL_ITERS) {
-			Logger::debug("=== iteration " + std::to_string(iter_num) + " ===");
-
 			inters.clear();
 			Segment traj(ball.pos_prev, ball.pos);
-
+			Logger::debug("=== iteration " + std::to_string(iter_num) + " ===");
 			Logger::debug(traj.str());
 
 			for (SegmentPtr const& segment_ptr : segment_ptrs) {
 				Segment const& seg = *segment_ptr;
-				SegmentIntersection inter = Segment::intersect(Segment(ball.pos, ball.pos + ball.vel), seg);
+				vec2 interpt = Collider::line_line(Segment(ball.pos, ball.pos + ball.vel), seg);  // implicit cast to Line
 
 				// Test if the intersection point lies on Segment(ball.pos_prev, ball.pos)
-				if (!(traj.in_bounds(inter.point) && seg.in_bounds(inter.point)))
+				if (!(traj.in_bounds(interpt) && seg.in_bounds(interpt)))
 					continue;
 
 				// WARNING : diff can be zero !!
@@ -54,11 +53,11 @@ class World {
 				// But the fix doesn't work because on the next physics iteration, pos_prev will be the colliding pos
 				// triggering collision handling again, and moving the point to the other side
 				// To fix this, say the ball trajectory is a segment that excludes pos_prev
-				if ((inter.point - ball.pos_prev).length() < EPS)
+				if ((interpt - ball.pos_prev).length() < EPS)
 					continue;
 
-				Logger::debug(inter.point.str());
-				inters.push_back(std::make_pair(inter.point, segment_ptr));
+				Logger::debug(interpt.str());
+				inters.push_back(std::make_pair(interpt, segment_ptr));
 			}
 
 			if (inters.size() == 0)

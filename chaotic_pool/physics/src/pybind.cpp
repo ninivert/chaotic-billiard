@@ -9,8 +9,9 @@
 #include "globals.h"
 #include "vec2.hpp"
 #include "ball.hpp"
-#include "segment.hpp"
+#include "curve.hpp"
 #include "world.hpp"
+#include "collider.hpp"
 
 namespace py = pybind11;
 
@@ -26,13 +27,44 @@ public:
 	}
 };
 
+class PyCurve : public Curve, public py::trampoline_self_life_support {
+public:
+	using Curve::Curve;
+
+	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE_PURE(vec2, Curve, operator(), t, order); }
+	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE_PURE(vec2, Curve, ortho, t); }
+	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE_PURE(vec2, Curve, tangent, t); }
+	virtual std::string str() const override { PYBIND11_OVERRIDE_PURE(std::string, Curve, str); }
+};
+
+class PyLine : public Line, public py::trampoline_self_life_support {
+public:
+	using Line::Line;
+
+	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE(vec2, Line, operator(), t, order); }
+	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE(vec2, Line, ortho, t); }
+	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE(vec2, Line, tangent, t); }
+	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Line, str); }
+};
+
 class PySegment : public Segment, public py::trampoline_self_life_support {
 public:
 	using Segment::Segment;
 
-	virtual std::string str() const override {
-		PYBIND11_OVERRIDE(std::string, Segment, str);
-	}
+	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE(vec2, Segment, operator(), t, order); }
+	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE(vec2, Segment, ortho, t); }
+	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE(vec2, Segment, tangent, t); }
+	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Segment, str); }
+};
+
+class PyBezierCubic : public BezierCubic, public py::trampoline_self_life_support {
+public:
+	using BezierCubic::BezierCubic;
+
+	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE(vec2, BezierCubic, operator(), t, order); }
+	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE(vec2, BezierCubic, ortho, t); }
+	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE(vec2, BezierCubic, tangent, t); }
+	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, BezierCubic, str); }
 };
 
 // Publicist for binding protected member functions
@@ -47,8 +79,11 @@ public:
 // Smart holder
 // https://github.com/pybind/pybind11/blob/smart_holder/README_smart_holder.rst#trampolines-and-stdunique_ptr
 
-PYBIND11_SMART_HOLDER_TYPE_CASTERS(Ball)
+PYBIND11_SMART_HOLDER_TYPE_CASTERS(Curve)
+PYBIND11_SMART_HOLDER_TYPE_CASTERS(Line)
 PYBIND11_SMART_HOLDER_TYPE_CASTERS(Segment)
+PYBIND11_SMART_HOLDER_TYPE_CASTERS(BezierCubic)
+PYBIND11_SMART_HOLDER_TYPE_CASTERS(Ball)
 
 // Binding code
 
@@ -101,30 +136,43 @@ PYBIND11_MODULE(physics, m) {
 		.def(py::init<PyBall const&>())
 		.def("__repr__", &Ball::str);
 
-	py::class_<LineCoefs>(m, "LineCoefs")
-		.def_readwrite("p", &LineCoefs::p)
-		.def_readwrite("q", &LineCoefs::q)
-		.def_readwrite("r", &LineCoefs::r)
-		.def("__repr__", &LineCoefs::str);
+	py::classh<Curve, PyCurve>(m, "Curve")
+		.def("ortho", &Curve::ortho)
+		.def("tangent", &Curve::tangent)
+		.def("__call__", &Curve::operator());
 
-	py::class_<SegmentIntersection>(m, "SegmentIntersection")
-		.def_readwrite("point", &SegmentIntersection::point)
-		.def_readwrite("on_segment", &SegmentIntersection::on_segment)
-		.def("__repr__", &SegmentIntersection::str);
+	py::classh<Line, PyLine, Curve>(m, "Line")
+		.def_readwrite("p", &Line::p)
+		.def_readwrite("q", &Line::q)
+		.def_readwrite("r", &Line::r)
+		.def(py::init<>())
+		.def(py::init<double, double, double>())
+		.def(py::init<PyLine const&>())
+		.def("ortho", &Line::ortho)
+		.def("tangent", &Line::tangent)
+		.def("__call__", &Line::operator());
 
-	py::classh<Segment, PySegment>(m, "Segment")
+	py::classh<Segment, PySegment, Curve>(m, "Segment")
 		.def_readwrite("p1", &Segment::p1)
 		.def_readwrite("p2", &Segment::p2)
 		.def(py::init<>())
 		.def(py::init<vec2 const&, vec2 const&>())
 		.def(py::init<PySegment const&>())
-		.def("coefs", &Segment::coefs)
 		.def("ortho", &Segment::ortho)
 		.def("tangent", &Segment::tangent)
-		.def("in_bounds", &Segment::in_bounds)
-		.def_static("intersect_linecoefs", &Segment::intersect_linecoefs)
-		.def_static("intersect", &Segment::intersect)
 		.def("__repr__", &Segment::str);
+
+	py::classh<BezierCubic, PyBezierCubic, Curve>(m, "BezierCubic")
+		.def_readwrite("p1", &BezierCubic::p0)
+		.def_readwrite("p1", &BezierCubic::p1)
+		.def_readwrite("p2", &BezierCubic::p2)
+		.def_readwrite("p1", &BezierCubic::p3)
+		.def(py::init<>())
+		.def(py::init<vec2 const&, vec2 const&, vec2 const&, vec2 const&>())
+		.def(py::init<PyBezierCubic const&>())
+		.def("ortho", &BezierCubic::ortho)
+		.def("tangent", &BezierCubic::tangent)
+		.def("__repr__", &BezierCubic::str);
 
 	py::class_<World>(m, "World")
 		.def(py::init<>())
@@ -141,6 +189,13 @@ PYBIND11_MODULE(physics, m) {
 
 	py::module_ m_globals = m.def_submodule("constants", "computational constants");
 	m_globals.attr("eps") = EPS;  // TODO : make readonly
+
+	py::module m_collider = m.def_submodule("collider", "compute collision points between mathematical parametrized paths");
+	m_collider.def("line_line", &Collider::line_line);
+	m_collider.def("segment_segment", &Collider::segment_segment);
+	py::class_<Collider::ParamPair>(m_collider, "ParamPair")
+		.def_readwrite("t1", &Collider::ParamPair::t1)
+		.def_readwrite("t2", &Collider::ParamPair::t2);
 }
 
 #endif
