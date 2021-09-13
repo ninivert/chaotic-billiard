@@ -61,6 +61,8 @@ struct Segment {
 
 	static vec2 intersect_linecoefs(LineCoefs const& c1, LineCoefs const& c2) {
 		double det = c1.p*c2.q - c2.p*c1.q;  // is zero if the lines are parallel
+		if (iszero(det))
+			return vec2(INFINITY, INFINITY);
 		vec2 rhs = vec2(
 			c1.r*c2.q - c2.r*c1.q,
 			c1.p*c2.r - c2.p*c1.r

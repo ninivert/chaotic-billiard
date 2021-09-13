@@ -26,84 +26,83 @@ class World {
 		}
 	}
 
-	void resolve_collisions() {
-		for (BallPtr& ball_ptr : ball_ptrs) {
-			std::vector<SegmentPtr> ignored_segments;
-			std::vector<std::pair<vec2, SegmentPtr>> inters;
+	void resolve_collision(Ball& ball) {
+		std::vector<std::pair<vec2, SegmentPtr>> inters;
+		unsigned int iter_num = 0;
 
-			while (true) {  // TODO : this is dirty, change it
-				// Compute all intersection points with the lines in the trajectory and test if it lies on both segments
-				inters.clear();
-				for (SegmentPtr const& segment_ptr : segment_ptrs) {
-					// Skip ignored segments
-					if (std::find(ignored_segments.begin(), ignored_segments.end(), segment_ptr) != ignored_segments.end())
-						continue;
+		while (iter_num++ < MAX_COLL_ITERS) {
+			Logger::debug("=== iteration " + std::to_string(iter_num) + " ===");
 
-					Segment balltraj(ball_ptr->pos_prev, ball_ptr->pos);
-					SegmentIntersection inter = Segment::intersect(balltraj, *segment_ptr);
+			inters.clear();
+			Segment traj(ball.pos_prev, ball.pos);
 
-					if (inter.on_segment) {
-						// Collision excludes prev_pos, otherwise it can happen that collision is triggered
-						// by pos, then in the next physics step by pos_prev
-						if ((inter.point - ball_ptr->pos_prev).length() > EPS) {
-							inters.push_back(std::make_pair(inter.point, segment_ptr));
-						}
-					}
-				}
+			Logger::debug(traj.str());
 
-				if (inters.size() == 0)
-					// No collision to be resolved
-					break;
+			for (SegmentPtr const& segment_ptr : segment_ptrs) {
+				Segment const& seg = *segment_ptr;
+				SegmentIntersection inter = Segment::intersect(Segment(ball.pos, ball.pos + ball.vel), seg);
 
-				// Compute distance of pos_prev to all intersection points
-				std::vector<double> dists(inters.size());
-				for (unsigned int i(0); i < inters.size(); ++i) {
-					dists[i] = (inters[i].first - ball_ptr->pos_prev).length();
-				}
-				double mindist = *std::min_element(dists.begin(), dists.end());
+				// Test if the intersection point lies on Segment(ball.pos_prev, ball.pos)
+				if (!(traj.in_bounds(inter.point) && seg.in_bounds(inter.point)))
+					continue;
 
-				// Resolve the collisions with the segments
-				ignored_segments.clear();
-				for (unsigned int i(0); i < inters.size(); ++i) {
-					vec2& interpt = inters[i].first;
-					SegmentPtr& segment_ptr = inters[i].second;
+				// WARNING : diff can be zero !!
+				// This happens when a ball lands perfectly on the line
+				// In that case, the pos_prev and pos are the same,
+				// making the line coefficients (and the determinant) zero of the intersection check in the next iteration
+				// FIX : using ball.vel to give the orientation of the trajectory, instead of the Segment(ball.pos_prev, ball.pos)
+				// But the fix doesn't work because on the next physics iteration, pos_prev will be the colliding pos
+				// triggering collision handling again, and moving the point to the other side
+				// To fix this, say the ball trajectory is a segment that excludes pos_prev
+				if ((inter.point - ball.pos_prev).length() < EPS)
+					continue;
 
-					// Find intersection closest to the old ball position within a tolerance
-					// This is done to deal with "perfect corner" situations
-					if (std::abs(dists[i] - mindist) > EPS)
-						continue;
+				Logger::debug(inter.point.str());
+				inters.push_back(std::make_pair(inter.point, segment_ptr));
+			}
 
-					// Compute the correction
-					vec2 diff = ball_ptr->pos - interpt;
-					vec2 n = segment_ptr->ortho().normalize();
-					vec2 m = segment_ptr->tangent().normalize();
-					vec2 newpos = interpt - vec2::dot(n, diff)*n + vec2::dot(m, diff)*m;
-					vec2 newvel = -vec2::dot(n, ball_ptr->vel)*n + vec2::dot(m, ball_ptr->vel)*m;
+			if (inters.size() == 0)
+				// No collision to be resolved
+				break;
 
-					// WARNING : diff can be zero !!
-					// This happens when a ball lands perfectly on the line
-					// In that case, the pos_prev and pos are the same,
-					// making the line coefficients (and the determinant) zero of the intersection check in the next iteration
-					// HACK : add 1e-3*newvel to oldpos to keep the direction (or add a vec2 direction to the ball)
-					// The hack doesn't work because on the next physics iteration, pos_prev will be the colliding pos
-					// triggering collision handling again, and moving the point to the other side
-					// To fix this, say the ball trajectory is a segment that excludes pos_prev
+			// Compute distance of pos_prev to all intersection points
+			std::vector<double> dists(inters.size());
+			for (unsigned int i(0); i < inters.size(); ++i) {
+				dists[i] = (inters[i].first - ball.pos_prev).length();
+			}
+			double mindist = *std::min_element(dists.begin(), dists.end());
 
-					// Resolve collision (with the closest line)
-					// Snap ball to intersection point. At this point the ball is on the same side as previously
-					ball_ptr->pos_prev = interpt
-						+ 1e-3*newvel;  // HACK : fix me with direction unit vector
-					ball_ptr->pos = newpos;
-					ball_ptr->vel = newvel;
+			// Resolve the collisions with the segments
+			for (unsigned int i(0); i < inters.size(); ++i) {
+				vec2& interpt = inters[i].first;
+				Segment const& seg = *inters[i].second;
 
-					// Since pos_prev is on the line, the next iteration will always consider that collision point and the program hangs,
-					// so add the segment to the list of ignored segments
-					ignored_segments.push_back(segment_ptr);
+				// Find intersection closest to the old ball position within a tolerance
+				// This is done to deal with "perfect corner" situations
+				if (std::abs(dists[i] - mindist) > EPS)
+					continue;
 
-					// Next iteration resolves the rest of the collisions (ball may have crossed multiple lines in one step)
-				}
+				// Compute the correction
+				vec2 diff = ball.pos - interpt;
+				vec2 n = seg.ortho().normalize();
+				vec2 m = seg.tangent().normalize();
+				vec2 newpos = interpt - vec2::dot(n, diff)*n + vec2::dot(m, diff)*m;
+				vec2 newvel = -vec2::dot(n, ball.vel)*n + vec2::dot(m, ball.vel)*m;
+
+				// Resolve collision (with the closest line)
+				// Snap ball to intersection point. At this point the ball is on the same side as previously
+				ball.pos_prev = interpt;
+				ball.pos = newpos;
+				ball.vel = newvel;
+
+				// Next iteration resolves the rest of the collisions (ball may have crossed multiple lines in one step)
 			}
 		}
+	}
+
+	void resolve_collisions() {
+		for (BallPtr& ball_ptr : ball_ptrs)
+			resolve_collision(*ball_ptr);
 	}
 
 public:
