@@ -1,6 +1,6 @@
 import pyglet
 from pyglet.gl import *
-from chaotic_pool.physics import vec2, Segment, Ball, constants
+from chaotic_billiard.physics import vec2, Segment, Ball, constants
 from typing import List
 import numpy
 

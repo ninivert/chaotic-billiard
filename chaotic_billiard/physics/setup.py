@@ -4,7 +4,7 @@ from pybind11.setup_helpers import Pybind11Extension
 ext_modules = [
 	Pybind11Extension(
 		'physics',
-		['src/pybind.cpp']
+		['src/collider.cpp', 'src/curve.cpp', 'src/pybind.cpp']
 	)
 ]
 

@@ -7,25 +7,25 @@
 namespace Logger {
 	enum Level { DEBUG = 0, INFO = 1, WARNING = 2, ERROR = 3, CRITICAL = 4 };
 
-	unsigned int level(INFO);
+	static unsigned int level(INFO);
 
-	void debug(std::string msg) {
+	static void debug(std::string msg) {
 		if (level <= DEBUG)
 			std::cout << "[DEBUG] " << msg << std::endl;
 	}
-	void info(std::string msg) {
+	static void info(std::string msg) {
 		if (level <= INFO)
 			std::cout << "[INFO] " << msg << std::endl;
 	}
-	void warning(std::string msg) {
+	static void warning(std::string msg) {
 		if (level <= WARNING)
 			std::cout << "[WARNING] " << msg << std::endl;
 	}
-	void error(std::string msg) {
+	static void error(std::string msg) {
 		if (level <= ERROR)
 			std::cout << "[ERROR] " << msg << std::endl;
 	}
-	void critical(std::string msg) {
+	static void critical(std::string msg) {
 		if (level <= CRITICAL)
 			std::cout << "[CRITICAL] " << msg << std::endl;
 	}

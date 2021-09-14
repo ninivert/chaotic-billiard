@@ -9,7 +9,8 @@ struct vec2 {
 
 	vec2() : x(0), y(0) {}
 	vec2(double x, double y) : x(x), y(y) {}
-	vec2(const vec2& v) : x(v.x), y(v.y) {}
+	vec2(const vec2& v) = default;
+	vec2(vec2&& v) = default;
 
 	vec2& operator=(const vec2& v) {
 		x = v.x;

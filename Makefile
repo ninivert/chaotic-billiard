@@ -1,7 +1,7 @@
 .PHONY: build-physics
 
 build-physics:
-	cd chaotic_pool/physics; \
+	cd chaotic_billiard/physics; \
 	python setup.py build_ext --build-lib ../
 
 install-pybind-smart_holder:

@@ -7,11 +7,11 @@
 #include <pybind11/stl.h>
 
 #include "globals.h"
+#include "logger.hpp"
 #include "vec2.hpp"
 #include "ball.hpp"
 #include "curve.hpp"
 #include "world.hpp"
-#include "collider.hpp"
 
 namespace py = pybind11;
 
@@ -32,8 +32,14 @@ public:
 	using Curve::Curve;
 
 	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE_PURE(vec2, Curve, operator(), t, order); }
+	virtual double inverse(vec2 const& point) const override { PYBIND11_OVERRIDE_PURE(double, Curve, inverse, point); }
 	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE_PURE(vec2, Curve, ortho, t); }
 	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE_PURE(vec2, Curve, tangent, t); }
+
+	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE_PURE(Collider::ParamPairs, Curve, collide, line); }
+	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE_PURE(Collider::ParamPairs, Curve, collide, seg); }
+	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE_PURE(Collider::ParamPairs, Curve, collide, bezier); }
+
 	virtual std::string str() const override { PYBIND11_OVERRIDE_PURE(std::string, Curve, str); }
 };
 
@@ -42,8 +48,14 @@ public:
 	using Line::Line;
 
 	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE(vec2, Line, operator(), t, order); }
+	virtual double inverse(vec2 const& point) const override { PYBIND11_OVERRIDE(double, Line, inverse, point); }
 	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE(vec2, Line, ortho, t); }
 	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE(vec2, Line, tangent, t); }
+
+	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Line, collide, line); }
+	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Line, collide, seg); }
+	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Line, collide, bezier); }
+
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Line, str); }
 };
 
@@ -52,8 +64,14 @@ public:
 	using Segment::Segment;
 
 	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE(vec2, Segment, operator(), t, order); }
+	virtual double inverse(vec2 const& point) const override { PYBIND11_OVERRIDE(double, Segment, inverse, point); }
 	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE(vec2, Segment, ortho, t); }
 	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE(vec2, Segment, tangent, t); }
+
+	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Segment, collide, line); }
+	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Segment, collide, seg); }
+	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Segment, collide, bezier); }
+
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Segment, str); }
 };
 
@@ -62,8 +80,14 @@ public:
 	using BezierCubic::BezierCubic;
 
 	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE(vec2, BezierCubic, operator(), t, order); }
+	virtual double inverse(vec2 const& point) const override { PYBIND11_OVERRIDE(double, BezierCubic, inverse, point); }
 	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE(vec2, BezierCubic, ortho, t); }
 	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE(vec2, BezierCubic, tangent, t); }
+
+	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, line); }
+	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, seg); }
+	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, bezier); }
+
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, BezierCubic, str); }
 };
 
@@ -139,7 +163,12 @@ PYBIND11_MODULE(physics, m) {
 	py::classh<Curve, PyCurve>(m, "Curve")
 		.def("ortho", &Curve::ortho)
 		.def("tangent", &Curve::tangent)
-		.def("__call__", &Curve::operator());
+		.def("collide", static_cast<Collider::ParamPairs (Curve::*)(Line const&) const>(&Curve::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Curve::*)(Segment const&) const>(&Curve::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Curve::*)(BezierCubic const&) const>(&Curve::collide))
+		.def("inverse", &Curve::inverse)
+		.def("__call__", &Curve::operator(), py::arg("t"), py::arg("order") = 0)
+		.def("__repr__", &Curve::str);
 
 	py::classh<Line, PyLine, Curve>(m, "Line")
 		.def_readwrite("p", &Line::p)
@@ -150,7 +179,9 @@ PYBIND11_MODULE(physics, m) {
 		.def(py::init<PyLine const&>())
 		.def("ortho", &Line::ortho)
 		.def("tangent", &Line::tangent)
-		.def("__call__", &Line::operator());
+		.def("inverse", &Line::inverse)
+		.def("__call__", &Line::operator(), py::arg("t"), py::arg("order") = 0)
+		.def("__repr__", &Line::str);
 
 	py::classh<Segment, PySegment, Curve>(m, "Segment")
 		.def_readwrite("p1", &Segment::p1)
@@ -160,6 +191,8 @@ PYBIND11_MODULE(physics, m) {
 		.def(py::init<PySegment const&>())
 		.def("ortho", &Segment::ortho)
 		.def("tangent", &Segment::tangent)
+		.def("inverse", &Segment::inverse)
+		.def("__call__", &Segment::operator(), py::arg("t"), py::arg("order") = 0)
 		.def("__repr__", &Segment::str);
 
 	py::classh<BezierCubic, PyBezierCubic, Curve>(m, "BezierCubic")
@@ -172,30 +205,35 @@ PYBIND11_MODULE(physics, m) {
 		.def(py::init<PyBezierCubic const&>())
 		.def("ortho", &BezierCubic::ortho)
 		.def("tangent", &BezierCubic::tangent)
+		.def("inverse", &BezierCubic::inverse)
+		.def("__call__", &BezierCubic::operator(), py::arg("t"), py::arg("order") = 0)
 		.def("__repr__", &BezierCubic::str);
 
 	py::class_<World>(m, "World")
 		.def(py::init<>())
 		.def("step", &World::step)
 		.def("add_ball", &World::add_ball)
-		.def("add_segment", &World::add_segment)
+		.def("add_curve", &World::add_curve)
 		.def_property_readonly("balls", [](World const& world) {
 			return py::list(py::make_iterator(world.ball_ptrs.begin(), world.ball_ptrs.end()));
 		})
-		.def_property_readonly("segments", [](World const& world) {
-			return py::list(py::make_iterator(world.segment_ptrs.begin(), world.segment_ptrs.end()));
+		.def_property_readonly("curves", [](World const& world) {
+			return py::list(py::make_iterator(world.curve_ptrs.begin(), world.curve_ptrs.end()));
 		})
 		.def("__repr__", &World::str);
 
 	py::module_ m_globals = m.def_submodule("constants", "computational constants");
 	m_globals.attr("eps") = EPS;  // TODO : make readonly
 
-	py::module m_collider = m.def_submodule("collider", "compute collision points between mathematical parametrized paths");
-	m_collider.def("line_line", &Collider::line_line);
-	m_collider.def("segment_segment", &Collider::segment_segment);
-	py::class_<Collider::ParamPair>(m_collider, "ParamPair")
-		.def_readwrite("t1", &Collider::ParamPair::t1)
-		.def_readwrite("t2", &Collider::ParamPair::t2);
+	py::module_ m_logger = m.def_submodule("logger", "logger to stdout used internally");
+	m_logger.attr("level") = Logger::level;  // TODO : make this work when changed in python
+	py::enum_<Logger::Level>(m_logger, "Level")
+		.value("DEBUG", Logger::DEBUG)
+		.value("INFO", Logger::INFO)
+		.value("WARNING", Logger::WARNING)
+		.value("ERROR", Logger::ERROR)
+		.value("CRITICAL", Logger::CRITICAL)
+		.export_values();
 }
 
 #endif
