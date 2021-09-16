@@ -1,108 +1,224 @@
 #include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
-#include <SFML/System.hpp>
+// #include <SFML/System.hpp>
 
 #include <memory>  // std::make_shared
 #include <cmath>
 #include <iostream>
+#include <fstream>
+
+// TODO : json parser
+
+#include "argparse.hpp"
 
 #include "world.hpp"
 #include "ball.hpp"
 #include "curve.hpp"
 #include "vec2.hpp"
 
-unsigned int constexpr WIDTH(1200);
-unsigned int constexpr HEIGHT(900);
+// unsigned int WINDOW_WIDTH(1200), WINDOW_HEIGHT(900);
+unsigned int WINDOW_WIDTH(500), WINDOW_HEIGHT(500);
 
-int main() {
-	sf::Window window(sf::VideoMode(WIDTH, HEIGHT), "chaotic billiard");
-	window.setVerticalSyncEnabled(true);
-	window.setActive(true);
+void draw(World const& world) {
+	// clear the buffers
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearDepth(1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 
+	// draw balls
+	glPointSize(1);
+	glColor3f(0.0, 1.0, 0.5);
+	glBegin(GL_POINTS);
+	for (auto const& ball_ptr : world.ball_ptrs)
+		glVertex2f(ball_ptr->pos.x/(WINDOW_WIDTH/2)-1, (ball_ptr->pos.y)/(WINDOW_HEIGHT/2)-1);
+	glEnd();
+
+	// draw curves
+	glLineWidth(1);
+	glColor3f(0.5, 0.5, 0.5);
+	for (auto const& curve_ptr : world.curve_ptrs) {
+		glBegin(GL_LINE_STRIP);
+		vec2 pt;
+		pt = (*curve_ptr)(0);
+		glVertex2f(pt.x/(WINDOW_WIDTH/2)-1, pt.y/(WINDOW_HEIGHT/2)-1);
+		for (double t : linspace(0, 1, 100)) {
+			pt = (*curve_ptr)(t);
+			glVertex2f(pt.x/(WINDOW_WIDTH/2)-1, pt.y/(WINDOW_HEIGHT/2)-1);
+		}
+		pt = (*curve_ptr)(1);
+		glVertex2f(pt.x/(WINDOW_WIDTH/2)-1, pt.y/(WINDOW_HEIGHT/2)-1);
+		glEnd();
+	}
+	glFlush();
+
+}
+
+int main(int argc, char const *argv[]) {
+	argparse::ArgumentParser parser("chaotic billiard");
+
+	parser.add_argument("--window")
+		.help("display a render window")
+		.default_value(false)
+		.implicit_value(true);
+
+	parser.add_argument("--render")
+		.help("render to file (not recommended when --window is used)")
+		.default_value(false)
+		.implicit_value(true);
+
+	parser.add_argument("--adaptative-dt")
+		.help("use a flexible dt determined by framerate")
+		.default_value(false)
+		.implicit_value(true);
+
+	parser.add_argument("--duration")
+		.help("duration of the simulation")
+		.scan<'g', double>()
+		.default_value(100.0);
+
+	parser.add_argument("--nsamples")
+		.help("number of steps the simulation has to undergo")
+		.scan<'i', int>()
+		.default_value(100);
+
+	parser.parse_args(argc, argv);
 
 	World world;
-	world.add_curve(std::make_shared<Segment>(vec2(500, 100), vec2(800, 200)));
-	world.add_curve(std::make_shared<Segment>(vec2(800, 200), vec2(800, 400)));
-	world.add_curve(std::make_shared<Segment>(vec2(800, 400), vec2(450, 350)));
-	world.add_curve(std::make_shared<Segment>(vec2(450, 350), vec2(500, 100)));
+	world.add_curve(std::make_shared<Arc>(vec2(250, 250), 100, 0, 2*M_PI));
+	// for (double angle : linspace(0, 2*M_PI, 10000))
+	// 	world.add_ball(std::make_shared<Ball>(vec2(250, 250), vec2(std::cos(angle), std::sin(angle))));
+	for (double y : linspace(200, 300, 10000))
+		world.add_ball(std::make_shared<Ball>(vec2(250, y), vec2(1, 0)));
 
-	world.add_curve(std::make_shared<Segment>(vec2(100, 100), vec2(400, 100)));
-	world.add_curve(std::make_shared<Segment>(vec2(400, 100), vec2(400, 400)));
-	world.add_curve(std::make_shared<Segment>(vec2(400, 400), vec2(100, 400)));
-	world.add_curve(std::make_shared<Segment>(vec2(100, 400), vec2(100, 100)));
+	// World world;
+	// world.add_curve(std::make_shared<Segment>(vec2(500, 100), vec2(800, 200)));
+	// world.add_curve(std::make_shared<Segment>(vec2(800, 200), vec2(800, 400)));
+	// world.add_curve(std::make_shared<Segment>(vec2(800, 400), vec2(450, 350)));
+	// world.add_curve(std::make_shared<Segment>(vec2(450, 350), vec2(500, 100)));
 
-	world.add_curve(std::make_shared<BezierCubic>(vec2(700, 450), vec2(-100, 1000), vec2(1000, 1000), vec2(50, 500)));
-	world.add_curve(std::make_shared<Segment>(vec2(700, 450), vec2(50, 500)));
+	// world.add_curve(std::make_shared<Segment>(vec2(100, 100), vec2(400, 100)));
+	// world.add_curve(std::make_shared<Segment>(vec2(400, 100), vec2(400, 400)));
+	// world.add_curve(std::make_shared<Segment>(vec2(400, 400), vec2(100, 400)));
+	// world.add_curve(std::make_shared<Segment>(vec2(100, 400), vec2(100, 100)));
 
-	world.add_curve(std::make_shared<Arc>(vec2(1000, 700), 150, 0, M_PI));
-	world.add_curve(std::make_shared<Segment>(vec2(850, 700), vec2(850, 500)));
-	world.add_curve(std::make_shared<Segment>(vec2(1150, 700), vec2(1150, 500)));
-	world.add_curve(std::make_shared<Arc>(vec2(1000, 500), 150, M_PI, 2*M_PI));
+	// world.add_curve(std::make_shared<BezierCubic>(vec2(700, 450), vec2(-100, 1000), vec2(1000, 1000), vec2(50, 500)));
+	// world.add_curve(std::make_shared<Segment>(vec2(700, 450), vec2(50, 500)));
 
-	world.add_curve(std::make_shared<Arc>(vec2(1000, 200), 100, 0, 2*M_PI));
+	// world.add_curve(std::make_shared<Arc>(vec2(1000, 700), 150, 0, M_PI));
+	// world.add_curve(std::make_shared<Segment>(vec2(850, 700), vec2(850, 500)));
+	// world.add_curve(std::make_shared<Segment>(vec2(1150, 700), vec2(1150, 500)));
+	// world.add_curve(std::make_shared<Arc>(vec2(1000, 500), 150, M_PI, 2*M_PI));
 
-	for (double angle : linspace(0, 2*M_PI, 1000)) {
-		world.add_ball(std::make_shared<Ball>(vec2(250, 250), vec2(std::cos(angle), std::sin(angle))));
-		world.add_ball(std::make_shared<Ball>(vec2(600, 250), vec2(std::cos(angle), std::sin(angle))));
-		world.add_ball(std::make_shared<Ball>(vec2(420, 650), vec2(std::cos(angle), std::sin(angle))));
-		world.add_ball(std::make_shared<Ball>(vec2(420, 820), vec2(std::cos(angle), std::sin(angle))));
-		world.add_ball(std::make_shared<Ball>(vec2(1000, 600), vec2(std::cos(angle), std::sin(angle))));
-		world.add_ball(std::make_shared<Ball>(vec2(1050, 200), vec2(std::cos(angle), std::sin(angle))));
-	}
+	// world.add_curve(std::make_shared<Arc>(vec2(1000, 200), 100, 0, 2*M_PI));
 
-	bool running(true);
-	sf::Clock clock;
+	// for (double angle : linspace(0, 2*M_PI, 1000)) {
+	// 	world.add_ball(std::make_shared<Ball>(vec2(250, 250), vec2(std::cos(angle), std::sin(angle))));
+	// 	world.add_ball(std::make_shared<Ball>(vec2(600, 250), vec2(std::cos(angle), std::sin(angle))));
+	// 	world.add_ball(std::make_shared<Ball>(vec2(420, 650), vec2(std::cos(angle), std::sin(angle))));
+	// 	world.add_ball(std::make_shared<Ball>(vec2(420, 820), vec2(std::cos(angle), std::sin(angle))));
+	// 	world.add_ball(std::make_shared<Ball>(vec2(1000, 600), vec2(std::cos(angle), std::sin(angle))));
+	// 	world.add_ball(std::make_shared<Ball>(vec2(1050, 200), vec2(std::cos(angle), std::sin(angle))));
+	// }
 
-	while (running) {
-		// handle events
-		sf::Event event;
-		while (window.pollEvent(event)) {
-			if (event.type == sf::Event::Closed) {
-				// end the program
-				running = false;
-			}
-			else if (event.type == sf::Event::Resized) {
-				// adjust the viewport when the window is resized
-				glViewport(0, 0, event.size.width, event.size.height);
+	// std::ofstream file;
+	// file.open("world_debug.json");
+	// file << world.json() << std::endl;
+	// file.close();
+
+	if (parser.get<bool>("--window") || parser.get<bool>("--render")) {
+		sf::RenderTexture texture;
+		sf::Sprite sprite;
+		texture.create(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+		unsigned int nsamples(parser.get<int>("--nsamples"));
+		double duration(parser.get<double>("--duration"));
+		double dt(duration/(nsamples-1));
+
+		if (parser["--window"] == true) {
+			// Rendering with a window
+			sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "chaotic billiard");
+			sf::Clock clock;
+			unsigned int frame_n(0);
+			window.setVerticalSyncEnabled(true);
+
+			while (window.isOpen()) {
+				if (parser.get<bool>("--adaptative-dt")) {
+					// TODO : framerate in window title
+					double frame_dt(clock.restart().asSeconds());
+					std::cout << frame_dt << std::endl;
+					world.step(frame_dt*100);
+				} else {
+					world.step(dt);
+				}
+
+				if (!texture.setActive(true))
+					std::cerr << "Failed to activate RenderTexture" << std::endl;
+				draw(world);
+				texture.display();
+				sprite.setTexture(texture.getTexture());
+				glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+				if (!texture.setActive(false))
+					std::cerr << "Failed to deactivate RenderTexture" << std::endl;
+
+				if (!window.setActive(true))
+					std::cerr << "Failed to activate Window" << std::endl;
+				window.clear();
+				window.draw(sprite);
+				window.display();
+				if (!window.setActive(false))
+					std::cerr << "Failed to deactivate Window" << std::endl;
+
+				sf::Event event;
+				if (window.pollEvent(event)) {
+					if (event.type == sf::Event::Closed)
+						window.close();
+					else if (event.type == sf::Event::Resized) {
+						WINDOW_WIDTH = event.size.width;
+						WINDOW_HEIGHT = event.size.height;
+						glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+					}
+				}
+
+				if (parser.get<bool>("--render")) {
+					texture.getTexture().copyToImage().saveToFile("frames/frame" + std::to_string(frame_n) + ".png");
+				}
+
+				++frame_n;
 			}
 		}
 
-		double dt(clock.restart().asSeconds());
-		std::cout << "dt = " << dt << std::endl;
-		world.step(dt*100);
+		else if (parser.get<bool>("--render")) {
+			if (!texture.setActive(true))
+				std::cerr << "Failed to activate RenderTexture" << std::endl;
 
-		// clear the buffers
-		glClearColor(0.0, 0.0, 0.0, 0.0);
-		glClearDepth(1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			// Rendering without a window
+			unsigned int nsamples(parser.get<int>("--nsamples"));
+			double duration(parser.get<double>("--duration"));
+			double dt(duration/(nsamples-1));
+			double t(0);  // keep track of time to account for inaccuracies
 
-		// draw balls
-		glPointSize(1);
-		glColor3f(0.0, 1.0, 0.5);
-		glBegin(GL_POINTS);
-		for (auto const& ball_ptr : world.ball_ptrs)
-			glVertex2f(ball_ptr->pos.x/(WIDTH/2)-1, (ball_ptr->pos.y)/(HEIGHT/2)-1);
-		glEnd();
+			unsigned int frame_n(0);
 
-		// draw curves
-		glLineWidth(1);
-		glColor3f(0.5, 0.5, 0.5);
-		for (auto const& curve_ptr : world.curve_ptrs) {
-			glBegin(GL_LINE_STRIP);
-			vec2 pt;
-			pt = (*curve_ptr)(0);
-			glVertex2f(pt.x/(WIDTH/2)-1, pt.y/(HEIGHT/2)-1);
-			for (double t : linspace(0, 1, 100)) {
-				pt = (*curve_ptr)(t);
-				glVertex2f(pt.x/(WIDTH/2)-1, pt.y/(HEIGHT/2)-1);
+			for (; frame_n < nsamples-1; ++frame_n) {
+				t += dt;
+				world.step(dt);
+
+				draw(world);
+				texture.display();
+				texture.getTexture().copyToImage().saveToFile("frames/frame" + std::to_string(frame_n) + ".png");
+				glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 			}
-			pt = (*curve_ptr)(1);
-			glVertex2f(pt.x/(WIDTH/2)-1, pt.y/(HEIGHT/2)-1);
-			glEnd();
-		}
-		glFlush();
+			world.step(duration-t);  // step the exact remaining time
+			texture.clear();
+			draw(world);
+			texture.display();
+			texture.getTexture().copyToImage().saveToFile("frames/frame" + std::to_string(frame_n) + ".png");
 
-		window.display();
+			if (!texture.setActive(false))
+				std::cerr << "Failed to deactivate RenderTexture" << std::endl;
+		}
 	}
 
 	return 0;

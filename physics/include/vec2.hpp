@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <string>
+#include <sstream>
+#include <limits>
 
 struct vec2 {
 	double x, y;
@@ -109,6 +111,21 @@ struct vec2 {
 
 	std::string str() const {
 		return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
+	}
+
+	std::string json() const {
+		std::stringstream ss;
+		ss.precision(std::numeric_limits<double>::digits10);
+		ss
+			<< "{"
+				<< "\"class\":" << "\"vec2\"" << ","
+				<< "\"parameters\":"
+				<< "{"
+					<< "\"x\":" << x << ","
+					<< "\"y\":" << y
+				<< "}"
+			<< "}";
+		return ss.str();
 	}
 };
 

@@ -9,6 +9,7 @@
 #include <vector>
 #include <unordered_set>
 #include <algorithm>  // std::min_element
+#include <sstream>  // std::stringstream
 #include <memory>
 #include <string>
 
@@ -139,6 +140,27 @@ public:
 		}
 		return ret;
 	}
+
+	std::string json() const {
+		std::stringstream ss;
+		ss
+			<< "{"
+				<< "\"balls\":[";
+					for (BallPtr const& ball_ptr : ball_ptrs)
+						ss << ball_ptr->json() << ",";
+					ss.seekp(-1, ss.cur);  // override the last comma
+				ss << "]" << ","
+				<< "\"curves\":[";
+					for (CurvePtr const& curve_ptr : curve_ptrs)
+						ss << curve_ptr->json() << ",";
+					ss.seekp(-1, ss.cur);  // override the last comma
+				ss << "]"
+			<< "}";
+		return ss.str();
+	}
+
+	// TODO
+	// static World from_json(std::string const& json);
 };
 
 #endif

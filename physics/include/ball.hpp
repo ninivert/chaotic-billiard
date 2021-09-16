@@ -3,6 +3,8 @@
 
 #include "vec2.hpp"
 #include <string>
+#include <sstream>
+#include <limits>
 
 class Ball {
 public:
@@ -15,6 +17,20 @@ public:
 
 	virtual std::string str() const {
 		return "Ball(pos=" + pos.str() + ", vel=" + vel.str() + ")";
+	}
+
+	virtual std::string json() const {
+		std::stringstream ss;
+		ss
+			<< "{"
+				<< "\"class\":" << "\"Ball\"" << ","
+				<< "\"parameters\":"
+				<< "{"
+					<< "\"pos\":" << pos.json() << ","
+					<< "\"vel\":" << vel.json()
+				<< "}"
+			<< "}";
+		return ss.str();
 	}
 };
 

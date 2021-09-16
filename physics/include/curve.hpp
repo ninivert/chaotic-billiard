@@ -1,7 +1,9 @@
 #ifndef __CURVE_HPP__
 #define __CURVE_HPP__
 
-#include <string>
+#include <string>  // std::string
+#include <sstream>  // std::stringstream
+#include <limits>  // std::numeric_limits
 #include <cmath>
 #include <cassert>  // assert
 #include <algorithm>  // std::swap
@@ -38,6 +40,7 @@ public:
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const = 0;
 
 	virtual std::string str() const = 0;
+	virtual std::string json() const = 0;
 };
 
 class Line : public Curve {
@@ -64,6 +67,21 @@ public:
 
 	virtual std::string str() const override {
 		return "Line(p=" + std::to_string(p) + ", q=" + std::to_string(q) + ", r=" + std::to_string(r) + ")";
+	}
+	virtual std::string json() const override {
+		std::stringstream ss;
+		ss.precision(std::numeric_limits<double>::digits10);
+		ss
+			<< "{"
+				<< "\"class\":" << "\"Line\"" << ","
+				<< "\"parameters\":"
+				<< "{"
+					<< "\"p\":" << p << ","
+					<< "\"q\":" << q << ","
+					<< "\"r\":" << r
+				<< "}"
+			<< "}";
+		return ss.str();
 	}
 };
 
@@ -92,6 +110,20 @@ public:
 
 	virtual std::string str() const override {
 		return "Segment(p1=" + p1.str() + ", p2=" + p2.str() + ")";
+	}
+	virtual std::string json() const override {
+		std::stringstream ss;
+		ss.precision(std::numeric_limits<double>::digits10);
+		ss
+			<< "{"
+				<< "\"class\":" << "\"Segment\"" << ","
+				<< "\"parameters\":"
+				<< "{"
+					<< "\"p1\":" << p1.json() << ","
+					<< "\"p2\":" << p2.json()
+				<< "}"
+			<< "}";
+		return ss.str();
 	}
 };
 
@@ -125,6 +157,22 @@ public:
 	virtual std::string str() const override {
 		return "Arc(p0=" + p0.str() + ", r=" + std::to_string(r) + ", theta_min=" + std::to_string(theta_min) + ", theta_max=" + std::to_string(theta_max) + ")";
 	}
+	virtual std::string json() const override {
+		std::stringstream ss;
+		ss.precision(std::numeric_limits<double>::digits10);
+		ss
+			<< "{"
+				<< "\"class\":" << "\"Arc\"" << ","
+				<< "\"parameters\":"
+				<< "{"
+					<< "\"p0\":" << p0.json() << ","
+					<< "\"r\":" << r << ","
+					<< "\"theta_min\":" << theta_min << ","
+					<< "\"theta_max\":" << theta_max
+				<< "}"
+			<< "}";
+		return ss.str();
+	}
 };
 
 class BezierCubic : public Curve {
@@ -150,6 +198,22 @@ public:
 
 	virtual std::string str() const override {
 		return "BezierCubic(p0=" + p0.str() + ", p1=" + p1.str() + ", p2=" + p2.str() + ", p3=" + p3.str() + ")";
+	}
+	virtual std::string json() const override {
+		std::stringstream ss;
+		ss.precision(std::numeric_limits<double>::digits10);
+		ss
+			<< "{"
+				<< "\"class\":" << "\"BezierCubic\"" << ","
+				<< "\"parameters\":"
+				<< "{"
+					<< "\"p0\":" << p0.json() << ","
+					<< "\"p1\":" << p1.json() << ","
+					<< "\"p2\":" << p2.json() << ","
+					<< "\"p3\":" << p3.json()
+				<< "}"
+			<< "}";
+		return ss.str();
 	}
 };
 

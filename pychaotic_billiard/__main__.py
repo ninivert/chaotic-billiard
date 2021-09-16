@@ -2,7 +2,7 @@
 # TODO : ball and line color/thickness etc.
 # TODO : temp directory
 
-from chaotic_billiard.physics import World, Segment, Arc, BezierCubic, Ball, vec2
+from pychaotic_billiard.physics import World, Segment, Arc, BezierCubic, Ball, vec2
 import numpy
 import pyglet
 from pyglet.gl import *

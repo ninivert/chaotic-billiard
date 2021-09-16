@@ -1,10 +1,10 @@
 cxx := g++
-cxx_flags := -Wall -Wextra -std=c++17
+cxx_flags := -Wall -Wextra -std=c++20
 
 bin := ./bin
 src := ./src
 build := ./build
-include := -I./include -I../physics/include
+include := -I./include -I../physics/include -I./lib
 libraries := -lsfml-graphics -lsfml-window -lsfml-system -lGL
 executable := app.out
 objs := build/app.o build/curve.o build/collider.o
