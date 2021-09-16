@@ -18,4 +18,6 @@ public:
 	}
 };
 
+// TODO : ostream methods
+
 #endif

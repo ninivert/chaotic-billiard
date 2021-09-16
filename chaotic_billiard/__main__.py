@@ -2,7 +2,7 @@
 # TODO : ball and line color/thickness etc.
 # TODO : temp directory
 
-from chaotic_billiard.physics import World, Segment, BezierCubic, Ball, vec2
+from chaotic_billiard.physics import World, Segment, Arc, BezierCubic, Ball, vec2
 import numpy
 import pyglet
 from pyglet.gl import *
@@ -23,6 +23,13 @@ world.add_curve(Segment(vec2(100, 400), vec2(100, 100)))
 world.add_curve(BezierCubic(vec2(700, 450), vec2(-100, 1000), vec2(1000, 1000), vec2(50, 500)))
 world.add_curve(Segment(vec2(700, 450), vec2(50, 500)))
 
+world.add_curve(Arc(vec2(1000, 700), 150, 0, numpy.pi))
+world.add_curve(Segment(vec2(850, 700), vec2(850, 500)))
+world.add_curve(Segment(vec2(1150, 700), vec2(1150, 500)))
+world.add_curve(Arc(vec2(1000, 500), 150, numpy.pi, 2*numpy.pi))
+
+world.add_curve(Arc(vec2(1000, 200), 100, 0, 2*numpy.pi))
+
 # for angle in numpy.linspace(0, 2*numpy.pi, 100):
 # 	world.add_segment(Segment(
 # 		200*vec2(numpy.cos(angle), numpy.sin(angle)) + vec2(300, 300),
@@ -37,10 +44,14 @@ for angle in numpy.linspace(0, 2*numpy.pi, 200):
 	world.add_ball(Ball(vec2(420, 650), vec2(numpy.cos(angle), numpy.sin(angle))))
 for angle in numpy.linspace(0, 2*numpy.pi, 200):
 	world.add_ball(Ball(vec2(420, 820), vec2(numpy.cos(angle), numpy.sin(angle))))
+for angle in numpy.linspace(0, 2*numpy.pi, 200):
+	world.add_ball(Ball(vec2(1000, 600), vec2(numpy.cos(angle), numpy.sin(angle))))
+for angle in numpy.linspace(0, 2*numpy.pi, 200):
+	world.add_ball(Ball(vec2(1050, 200), vec2(numpy.cos(angle), numpy.sin(angle))))
 
-window = pyglet.window.Window(width=900, height=900)
+window = pyglet.window.Window(width=1200, height=900)
 
-BEZIER_SAMPLE_SIZE = 100
+CURVE_SAMPLE_SIZE = 100
 
 def step(dt):
 	world.step(dt)
@@ -65,15 +76,15 @@ def draw():
 		glVertex2f(*seg.p2)
 	glEnd()
 
-	beziers = [curve for curve in world.curves if isinstance(curve, BezierCubic)]
+	explcurves = [curve for curve in world.curves if isinstance(curve, BezierCubic) or isinstance(curve, Arc)]
 	glLineWidth(1)
 	glColor3f(0.5, 0.5, 0.5)
-	for bezier in beziers:
+	for explcurve in explcurves:
 		glBegin(GL_LINE_STRIP)
-		glVertex2f(*bezier(0))
-		for i in range(BEZIER_SAMPLE_SIZE):
-			glVertex2f(*bezier(i/(BEZIER_SAMPLE_SIZE-1)))
-		glVertex2f(*bezier(1))
+		glVertex2f(*explcurve(0))
+		for i in range(CURVE_SAMPLE_SIZE):
+			glVertex2f(*explcurve(i/(CURVE_SAMPLE_SIZE-1)))
+		glVertex2f(*explcurve(1))
 		glEnd()
 
 def step_and_draw(dt):

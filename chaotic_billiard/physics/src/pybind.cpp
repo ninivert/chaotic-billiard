@@ -38,6 +38,7 @@ public:
 
 	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE_PURE(Collider::ParamPairs, Curve, collide, line); }
 	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE_PURE(Collider::ParamPairs, Curve, collide, seg); }
+	virtual Collider::ParamPairs collide(Arc const& arc) const override { PYBIND11_OVERRIDE_PURE(Collider::ParamPairs, Curve, collide, arc); }
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE_PURE(Collider::ParamPairs, Curve, collide, bezier); }
 
 	virtual std::string str() const override { PYBIND11_OVERRIDE_PURE(std::string, Curve, str); }
@@ -54,6 +55,7 @@ public:
 
 	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Line, collide, line); }
 	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Line, collide, seg); }
+	virtual Collider::ParamPairs collide(Arc const& arc) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Line, collide, arc); }
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Line, collide, bezier); }
 
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Line, str); }
@@ -70,9 +72,27 @@ public:
 
 	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Segment, collide, line); }
 	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Segment, collide, seg); }
+	virtual Collider::ParamPairs collide(Arc const& arc) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Segment, collide, arc); }
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Segment, collide, bezier); }
 
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Segment, str); }
+};
+
+class PyArc : public Arc, public py::trampoline_self_life_support {
+public:
+	using Arc::Arc;
+
+	virtual vec2 operator()(double t, unsigned int order = 0) const override { PYBIND11_OVERRIDE(vec2, Arc, operator(), t, order); }
+	virtual double inverse(vec2 const& point) const override { PYBIND11_OVERRIDE(double, Arc, inverse, point); }
+	virtual vec2 ortho(double t) const override { PYBIND11_OVERRIDE(vec2, Arc, ortho, t); }
+	virtual vec2 tangent(double t) const override { PYBIND11_OVERRIDE(vec2, Arc, tangent, t); }
+
+	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Arc, collide, line); }
+	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Arc, collide, seg); }
+	virtual Collider::ParamPairs collide(Arc const& arc) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Arc, collide, arc); }
+	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Arc, collide, bezier); }
+
+	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Arc, str); }
 };
 
 class PyBezierCubic : public BezierCubic, public py::trampoline_self_life_support {
@@ -86,6 +106,7 @@ public:
 
 	virtual Collider::ParamPairs collide(Line const& line) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, line); }
 	virtual Collider::ParamPairs collide(Segment const& seg) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, seg); }
+	virtual Collider::ParamPairs collide(Arc const& arc) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, arc); }
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, bezier); }
 
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, BezierCubic, str); }
@@ -106,6 +127,7 @@ public:
 PYBIND11_SMART_HOLDER_TYPE_CASTERS(Curve)
 PYBIND11_SMART_HOLDER_TYPE_CASTERS(Line)
 PYBIND11_SMART_HOLDER_TYPE_CASTERS(Segment)
+PYBIND11_SMART_HOLDER_TYPE_CASTERS(Arc)
 PYBIND11_SMART_HOLDER_TYPE_CASTERS(BezierCubic)
 PYBIND11_SMART_HOLDER_TYPE_CASTERS(Ball)
 
@@ -165,6 +187,7 @@ PYBIND11_MODULE(physics, m) {
 		.def("tangent", &Curve::tangent)
 		.def("collide", static_cast<Collider::ParamPairs (Curve::*)(Line const&) const>(&Curve::collide))
 		.def("collide", static_cast<Collider::ParamPairs (Curve::*)(Segment const&) const>(&Curve::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Curve::*)(Arc const&) const>(&Curve::collide))
 		.def("collide", static_cast<Collider::ParamPairs (Curve::*)(BezierCubic const&) const>(&Curve::collide))
 		.def("inverse", &Curve::inverse)
 		.def("__call__", &Curve::operator(), py::arg("t"), py::arg("order") = 0)
@@ -179,6 +202,10 @@ PYBIND11_MODULE(physics, m) {
 		.def(py::init<PyLine const&>())
 		.def("ortho", &Line::ortho)
 		.def("tangent", &Line::tangent)
+		.def("collide", static_cast<Collider::ParamPairs (Line::*)(Line const&) const>(&Line::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Line::*)(Segment const&) const>(&Line::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Line::*)(Arc const&) const>(&Line::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Line::*)(BezierCubic const&) const>(&Line::collide))
 		.def("inverse", &Line::inverse)
 		.def("__call__", &Line::operator(), py::arg("t"), py::arg("order") = 0)
 		.def("__repr__", &Line::str);
@@ -191,9 +218,31 @@ PYBIND11_MODULE(physics, m) {
 		.def(py::init<PySegment const&>())
 		.def("ortho", &Segment::ortho)
 		.def("tangent", &Segment::tangent)
+		.def("collide", static_cast<Collider::ParamPairs (Segment::*)(Line const&) const>(&Segment::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Segment::*)(Segment const&) const>(&Segment::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Segment::*)(Arc const&) const>(&Segment::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Segment::*)(BezierCubic const&) const>(&Segment::collide))
 		.def("inverse", &Segment::inverse)
 		.def("__call__", &Segment::operator(), py::arg("t"), py::arg("order") = 0)
 		.def("__repr__", &Segment::str);
+
+	py::classh<Arc, PyArc, Curve>(m, "Arc")
+		.def_readwrite("p0", &Arc::p0)
+		.def_readwrite("r", &Arc::r)
+		.def_readwrite("theta_min", &Arc::theta_min)
+		.def_readwrite("theta_max", &Arc::theta_max)
+		.def(py::init<>())
+		.def(py::init<vec2 const&, double, double, double>())
+		.def(py::init<PyArc const&>())
+		.def("ortho", &Arc::ortho)
+		.def("tangent", &Arc::tangent)
+		.def("collide", static_cast<Collider::ParamPairs (Arc::*)(Line const&) const>(&Arc::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Arc::*)(Segment const&) const>(&Arc::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Arc::*)(Arc const&) const>(&Arc::collide))
+		.def("collide", static_cast<Collider::ParamPairs (Arc::*)(BezierCubic const&) const>(&Arc::collide))
+		.def("inverse", &Arc::inverse)
+		.def("__call__", &Arc::operator(), py::arg("t"), py::arg("order") = 0)
+		.def("__repr__", &Arc::str);
 
 	py::classh<BezierCubic, PyBezierCubic, Curve>(m, "BezierCubic")
 		.def_readwrite("p1", &BezierCubic::p0)
@@ -205,6 +254,10 @@ PYBIND11_MODULE(physics, m) {
 		.def(py::init<PyBezierCubic const&>())
 		.def("ortho", &BezierCubic::ortho)
 		.def("tangent", &BezierCubic::tangent)
+		.def("collide", static_cast<Collider::ParamPairs (BezierCubic::*)(Line const&) const>(&BezierCubic::collide))
+		.def("collide", static_cast<Collider::ParamPairs (BezierCubic::*)(Segment const&) const>(&BezierCubic::collide))
+		.def("collide", static_cast<Collider::ParamPairs (BezierCubic::*)(Arc const&) const>(&BezierCubic::collide))
+		.def("collide", static_cast<Collider::ParamPairs (BezierCubic::*)(BezierCubic const&) const>(&BezierCubic::collide))
 		.def("inverse", &BezierCubic::inverse)
 		.def("__call__", &BezierCubic::operator(), py::arg("t"), py::arg("order") = 0)
 		.def("__repr__", &BezierCubic::str);
@@ -221,6 +274,15 @@ PYBIND11_MODULE(physics, m) {
 			return py::list(py::make_iterator(world.curve_ptrs.begin(), world.curve_ptrs.end()));
 		})
 		.def("__repr__", &World::str);
+
+	py::module_ m_collider = m.def_submodule("collider", "collider utility functions");
+	py::class_<Collider::ParamPair>(m_collider, "ParamPair")
+		.def_readwrite("t1", &Collider::ParamPair::t1)
+		.def_readwrite("t2", &Collider::ParamPair::t2)
+		.def("on_first", &Collider::ParamPair::on_first)
+		.def("on_second", &Collider::ParamPair::on_second)
+		.def("on_both", &Collider::ParamPair::on_both)
+		.def("__repr__", &Collider::ParamPair::str);
 
 	py::module_ m_globals = m.def_submodule("constants", "computational constants");
 	m_globals.attr("eps") = EPS;  // TODO : make readonly

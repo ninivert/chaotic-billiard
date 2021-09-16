@@ -1,6 +1,11 @@
 #include "collider.hpp"
 #include "polynomial.hpp"  // Polynomial::roots_cubic
+#include "logger.hpp"
 #include <algorithm>  // std::swap
+
+//
+// Line - ...
+//
 
 Collider::ParamPairs Collider::line_line(Line const& l1, Line const& l2) {
 	// Lines are infinite, and due to the tanh mapping,
@@ -18,6 +23,14 @@ Collider::ParamPairs Collider::line_segment(Line const& line, Segment const& seg
 	return { { line.inverse(interpt), seg.inverse(interpt) } };
 }
 
+Collider::ParamPairs Collider::line_arc(Line const& line, Arc const& arc) {
+	std::vector<vec2> interpts(points_segment_arc(Segment(line), arc));
+	Collider::ParamPairs tpairs;
+	for (vec2 const& interpt : interpts)
+		tpairs.push_back({ line.inverse(interpt), arc.inverse(interpt) });
+	return tpairs;
+}
+
 Collider::ParamPairs Collider::line_beziercubic(Line const& line, BezierCubic const& bezier) {
 	std::vector<double> roots(params_line_beziercubic(line, bezier));
 	Collider::ParamPairs tpairs;
@@ -27,6 +40,10 @@ Collider::ParamPairs Collider::line_beziercubic(Line const& line, BezierCubic co
 	}
 	return tpairs;
 }
+
+//
+// Segment - ...
+//
 
 Collider::ParamPairs Collider::segment_line(Segment const& seg, Line const& line) {
 	Collider::ParamPairs tpairs(line_segment(line, seg));
@@ -40,6 +57,14 @@ Collider::ParamPairs Collider::segment_segment(Segment const& s1, Segment const&
 	return { { s1.inverse(interpt), s2.inverse(interpt) } };
 }
 
+Collider::ParamPairs Collider::segment_arc(Segment const& seg, Arc const& arc) {
+	std::vector<vec2> interpts(points_segment_arc(seg, arc));
+	Collider::ParamPairs tpairs;
+	for (vec2 const& interpt : interpts)
+		tpairs.push_back({ seg.inverse(interpt), arc.inverse(interpt) });
+	return tpairs;
+}
+
 Collider::ParamPairs Collider::segment_beziercubic(Segment const& seg, BezierCubic const& bezier) {
 	std::vector<double> roots(params_line_beziercubic(Line(seg), bezier));
 	Collider::ParamPairs tpairs;
@@ -49,6 +74,38 @@ Collider::ParamPairs Collider::segment_beziercubic(Segment const& seg, BezierCub
 	}
 	return tpairs;
 }
+
+//
+// Arc - ...
+//
+
+Collider::ParamPairs Collider::arc_line(Arc const& arc, Line const& line) {
+	Collider::ParamPairs tpairs(line_arc(line, arc));
+	for (ParamPair& tpair : tpairs)
+		std::swap(tpair.t1, tpair.t2);  // restitude order of segment t1 and line t2
+	return tpairs;
+}
+
+Collider::ParamPairs Collider::arc_segment(Arc const& arc, Segment const& seg) {
+	Collider::ParamPairs tpairs(segment_arc(seg, arc));
+	for (ParamPair& tpair : tpairs)
+		std::swap(tpair.t1, tpair.t2);  // restitude order of segment t1 and line t2
+	return tpairs;
+}
+
+Collider::ParamPairs Collider::arc_arc(Arc const& arc1, Arc const& arc2) {
+	// TODO
+	return { {0,0} };
+}
+
+Collider::ParamPairs Collider::arc_beziercubic(Arc const& arc, BezierCubic const& bezier) {
+	// TODO
+	return { { 0, 0 } };
+}
+
+//
+// BezierCubic - ...
+//
 
 Collider::ParamPairs Collider::beziercubic_line(BezierCubic const& bezier, Line const& line) {
 	Collider::ParamPairs tpairs(line_beziercubic(line, bezier));
@@ -64,10 +121,19 @@ Collider::ParamPairs Collider::beziercubic_segment(BezierCubic const& bezier, Se
 	return tpairs;
 }
 
+Collider::ParamPairs Collider::beziercubic_arc(BezierCubic const& bezier, Arc const& arc) {
+	// TODO
+	return { {0,0} };
+}
+
 Collider::ParamPairs Collider::beziercubic_beziercubic(BezierCubic const& b1, BezierCubic const& b2) {
 	// TODO with a lookup table
 	return { { 0, 0 } };
 }
+
+//
+// Utility
+//
 
 vec2 Collider::point_line_line(Line const& l1, Line const& l2) {
 	double det = l1.p*l2.q - l2.p*l1.q;
@@ -81,6 +147,41 @@ vec2 Collider::point_line_line(Line const& l1, Line const& l2) {
 	);
 	return rhs/det;
 }
+
+std::vector<vec2> Collider::points_segment_arc(Segment const& seg, Arc const& arc) {
+	// https://mathworld.wolfram.com/Circle-LineIntersection.html
+	vec2 relp1(seg.p1 - arc.p0);
+	vec2 relp2(seg.p2 - arc.p0);
+	double dx(relp2.x - relp1.x);
+	double dy(relp2.y - relp1.y);
+	double dr(std::sqrt(dx*dx + dy*dy));
+	double det(relp1.x*relp2.y - relp2.x*relp1.y);
+	double delta(arc.r*arc.r * dr*dr - det*det);
+	if (delta <= 0)
+		// no collision
+		return {};
+	if (iszero(delta)) {
+		// one collision point
+		vec2 relinterpt(det*dy/(dr*dr), -det*dx/(dr*dr));
+		return { relinterpt + arc.p0 };
+	} else {
+		// two collision points
+		double sqrtdelta(std::sqrt(delta));
+		vec2 relinterpt1(
+			(det*dy + std::copysign(dx, dy)*sqrtdelta) / (dr*dr),
+			(-det*dx + std::copysign(dy, dx)*sqrtdelta) / (dr*dr)
+		);
+		vec2 relinterpt2(
+			(det*dy - std::copysign(dx, dy)*sqrtdelta) / (dr*dr),
+			(-det*dx - std::copysign(dy, dx)*sqrtdelta) / (dr*dr)
+		);
+		// Logger::debug(relinterpt1.str() + " " + relinterpt2.str());
+		return { relinterpt1 + arc.p0, relinterpt2 + arc.p0 };
+	}
+}
+
+// http://ambrsoft.com/TrigoCalc/Circles2/Ellipse/EllipseLine.htm
+// segment-ellipse
 
 std::vector<double> Collider::params_line_beziercubic(Line const& line, BezierCubic const& bezier) {
 	// construct cubic polynomial which solves the bezier-line intersection

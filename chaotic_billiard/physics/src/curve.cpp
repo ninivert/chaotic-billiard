@@ -32,6 +32,14 @@ double Line::inverse(vec2 const& point) const {
 	return t;
 }
 
+vec2 Line::ortho(double t) const {
+	return vec2(p, q);
+}
+
+vec2 Line::tangent(double t) const {
+	return vec2(-q, p);
+}
+
 Collider::ParamPairs Line::collide(Curve const& curve) const {
 	Collider::ParamPairs tpairs = curve.collide(*this);
 	for (Collider::ParamPair& tpair : tpairs)
@@ -40,6 +48,7 @@ Collider::ParamPairs Line::collide(Curve const& curve) const {
 }
 Collider::ParamPairs Line::collide(Line const& line) const { return Collider::line_line(*this, line); }
 Collider::ParamPairs Line::collide(Segment const& seg) const { return Collider::line_segment(*this, seg); }
+Collider::ParamPairs Line::collide(Arc const& arc) const { return Collider::line_arc(*this, arc); }
 Collider::ParamPairs Line::collide(BezierCubic const& bezier) const { return Collider::line_beziercubic(*this, bezier); }
 
 //
@@ -73,6 +82,14 @@ double Segment::inverse(vec2 const& point) const {
 		return (point.y - p1.y) / (p2.y - p1.y);
 }
 
+vec2 Segment::ortho(double t) const {
+	return tangent(t).ortho();
+}
+
+vec2 Segment::tangent(double t) const {
+	return p1 - p2;
+}
+
 Collider::ParamPairs Segment::collide(Curve const& curve) const {
 	Collider::ParamPairs tpairs = curve.collide(*this);
 	for (Collider::ParamPair& tpair : tpairs)
@@ -81,10 +98,50 @@ Collider::ParamPairs Segment::collide(Curve const& curve) const {
 }
 Collider::ParamPairs Segment::collide(Line const& line) const { return Collider::segment_line(*this, line); }
 Collider::ParamPairs Segment::collide(Segment const& seg) const { return Collider::segment_segment(*this, seg); }
+Collider::ParamPairs Segment::collide(Arc const& arc) const { return Collider::segment_arc(*this, arc); }
 Collider::ParamPairs Segment::collide(BezierCubic const& bezier) const { return Collider::segment_beziercubic(*this, bezier); }
 
 //
-// Bezier
+// Arc
+//
+
+vec2 Arc::operator()(double t, unsigned int order /* = 0 */) const {
+	// no need for Angle instead of double since we're taking trig functions next
+	double theta(lerp(theta_min, theta_max, t));
+	vec2 point(r*std::cos(theta), r*std::sin(theta));
+	point += p0;
+	return point;
+}
+
+double Arc::inverse(vec2 const& point) const {
+	vec2 relpoint(point - p0);
+	double theta(pfmod(std::atan2(relpoint.y, relpoint.x), 2*M_PI));
+	return ilerp(theta_min, theta_max, theta);
+}
+
+vec2 Arc::ortho(double t) const {
+	return tangent(t).ortho();
+}
+
+vec2 Arc::tangent(double t) const {
+	double theta(lerp(theta_min, theta_max, t));
+	return vec2(-std::sin(theta), std::cos(theta));
+}
+
+Collider::ParamPairs Arc::collide(Curve const& curve) const {
+	Collider::ParamPairs tpairs = curve.collide(*this);
+	for (Collider::ParamPair& tpair : tpairs)
+		std::swap(tpair.t1, tpair.t2);
+	return tpairs;
+}
+Collider::ParamPairs Arc::collide(Line const& line) const { return Collider::arc_line(*this, line); }
+Collider::ParamPairs Arc::collide(Segment const& seg) const { return Collider::arc_segment(*this, seg); }
+Collider::ParamPairs Arc::collide(Arc const& arc) const { return Collider::arc_arc(*this, arc); }
+Collider::ParamPairs Arc::collide(BezierCubic const& bezier) const { return Collider::arc_beziercubic(*this, bezier); }
+
+
+//
+// BezierCubic
 //
 
 vec2 BezierCubic::operator()(double t, unsigned int order /* = 0 */) const {
@@ -115,6 +172,14 @@ double BezierCubic::inverse(vec2 const& point) const {
 	return 0;
 }
 
+vec2 BezierCubic::ortho(double t) const {
+	return tangent(t).ortho();
+}
+
+vec2 BezierCubic::tangent(double t) const {
+	return operator()(t, 1);
+}
+
 Collider::ParamPairs BezierCubic::collide(Curve const& curve) const {
 	Collider::ParamPairs tpairs = curve.collide(*this);
 	for (Collider::ParamPair& tpair : tpairs)
@@ -123,4 +188,5 @@ Collider::ParamPairs BezierCubic::collide(Curve const& curve) const {
 }
 Collider::ParamPairs BezierCubic::collide(Line const& line) const { return Collider::beziercubic_line(*this, line); }
 Collider::ParamPairs BezierCubic::collide(Segment const& seg) const { return Collider::beziercubic_segment(*this, seg); }
+Collider::ParamPairs BezierCubic::collide(Arc const& arc) const { return Collider::beziercubic_arc(*this, arc); }
 Collider::ParamPairs BezierCubic::collide(BezierCubic const& bezier) const { return Collider::beziercubic_beziercubic(*this, bezier); }

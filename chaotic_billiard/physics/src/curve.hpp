@@ -14,6 +14,7 @@
 class Curve;
 class Line;
 class Segment;
+class Arc;
 class BezierCubic;
 namespace Collider {
 	struct ParamPair;
@@ -33,6 +34,7 @@ public:
 	virtual Collider::ParamPairs collide(Curve const& curve) const = 0;
 	virtual Collider::ParamPairs collide(Line const& line) const = 0;
 	virtual Collider::ParamPairs collide(Segment const& seg) const = 0;
+	virtual Collider::ParamPairs collide(Arc const& arc) const = 0;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const = 0;
 
 	virtual std::string str() const = 0;
@@ -51,12 +53,13 @@ public:
 
 	virtual vec2 operator()(double t, unsigned int order = 0) const override;
 	virtual double inverse(vec2 const& point) const override;
-	virtual vec2 ortho(double t) const override { return vec2(p, q); }
-	virtual vec2 tangent(double t) const override { return vec2(-q, p); }
+	virtual vec2 ortho(double t) const override;
+	virtual vec2 tangent(double t) const override;
 
 	virtual Collider::ParamPairs collide(Curve const& curve) const override;
 	virtual Collider::ParamPairs collide(Line const& line) const override;
 	virtual Collider::ParamPairs collide(Segment const& seg) const override;
+	virtual Collider::ParamPairs collide(Arc const& arc) const override;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
 
 	virtual std::string str() const override {
@@ -78,16 +81,49 @@ public:
 
 	virtual vec2 operator()(double t, unsigned int order = 0) const override;
 	virtual double inverse(vec2 const& point) const override;
-	virtual vec2 ortho(double t = 0) const override { return tangent(t).ortho(); }
-	virtual vec2 tangent(double t = 0) const override { return p1 - p2; }
+	virtual vec2 ortho(double t) const override;
+	virtual vec2 tangent(double t) const override;
 
 	virtual Collider::ParamPairs collide(Curve const& curve) const override;
 	virtual Collider::ParamPairs collide(Line const& line) const override;
 	virtual Collider::ParamPairs collide(Segment const& seg) const override;
+	virtual Collider::ParamPairs collide(Arc const& arc) const override;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
 
 	virtual std::string str() const override {
 		return "Segment(p1=" + p1.str() + ", p2=" + p2.str() + ")";
+	}
+};
+
+class Arc : public Curve {
+public:
+	vec2 p0;
+	double r;
+	double theta_min, theta_max;
+
+	Arc() = default;
+	Arc(Arc const& a) = default;
+	Arc(vec2 const& p0_, double r_, double theta_min_, double theta_max_)
+		: p0(p0_), r(r_),
+		theta_min(pfmod(theta_min_, 2*M_PI)),
+		// we add the extra term to force the arc to go around anticlockwise
+		theta_max(pfmod(theta_max_, 2*M_PI) + (pfmod(theta_max_, 2*M_PI) <= pfmod(theta_min_, 2*M_PI))*2*M_PI)
+		{}
+	virtual ~Arc() = default;
+
+	virtual vec2 operator()(double t, unsigned int order = 0) const override;
+	virtual double inverse(vec2 const& point) const override;
+	virtual vec2 ortho(double t) const override;
+	virtual vec2 tangent(double t) const override;
+
+	virtual Collider::ParamPairs collide(Curve const& curve) const override;
+	virtual Collider::ParamPairs collide(Line const& line) const override;
+	virtual Collider::ParamPairs collide(Segment const& seg) const override;
+	virtual Collider::ParamPairs collide(Arc const& arc) const override;
+	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
+
+	virtual std::string str() const override {
+		return "Arc(p0=" + p0.str() + ", r=" + std::to_string(r) + ", theta_min=" + std::to_string(theta_min) + ", theta_max=" + std::to_string(theta_max) + ")";
 	}
 };
 
@@ -103,12 +139,13 @@ public:
 
 	virtual vec2 operator()(double t, unsigned int order = 0) const override;
 	virtual double inverse(vec2 const& point) const override;
-	virtual vec2 ortho(double t = 0) const override { return tangent(t).ortho(); }
-	virtual vec2 tangent(double t = 0) const override { return operator()(t, 1); }
+	virtual vec2 ortho(double t) const override;
+	virtual vec2 tangent(double t) const override;
 
 	virtual Collider::ParamPairs collide(Curve const& curve) const override;
 	virtual Collider::ParamPairs collide(Line const& line) const override;
 	virtual Collider::ParamPairs collide(Segment const& seg) const override;
+	virtual Collider::ParamPairs collide(Arc const& arc) const override;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
 
 	virtual std::string str() const override {
