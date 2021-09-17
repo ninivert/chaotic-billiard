@@ -1,7 +1,7 @@
 #ifndef __WORLD_HPP__
 #define __WORLD_HPP__
 
-#include "globals.h" // EPS
+#include "globals.h" // Globals::EPS
 #include "ball.hpp"
 #include "curve.hpp"
 #include "collider.hpp"
@@ -36,7 +36,7 @@ class World {
 		std::vector<Inter> inters;
 		unsigned int iter_num = 0;
 
-		while (iter_num++ < MAX_COLL_ITERS) {
+		while (iter_num++ < Globals::MAX_COLL_ITERS) {
 			inters.clear();
 			Segment traj(ball.pos_prev, ball.pos);
 			Segment dir(ball.pos, ball.pos + ball.vel);
@@ -62,7 +62,7 @@ class World {
 					// But the fix doesn't work because on the next physics iteration, pos_prev will be the colliding pos
 					// triggering collision handling again, and moving the point to the other side
 					// To fix this, say the ball trajectory is a segment that excludes pos_prev
-					if ((interpt - ball.pos_prev).length() < EPS)
+					if ((interpt - ball.pos_prev).length() < Globals::EPS)
 						continue;
 
 					// Logger::debug("selected " + tpair.str() + " collision at " + interpt.str() + " with " + curve_ptr->str());
@@ -87,7 +87,7 @@ class World {
 				// This is done to deal with "perfect corner" situations
 				// PITFALL : However, this comes with the cost that (for example)
 				// two vertical Segments in the same position will let everything through (double collision in one frame)
-				if (std::abs(dists[i] - mindist) > EPS)
+				if (std::abs(dists[i] - mindist) > Globals::EPS)
 					continue;
 
 				// Compute the correction

@@ -3,7 +3,6 @@
 
 #include <string>  // std::string
 #include <sstream>  // std::stringstream
-#include <limits>  // std::numeric_limits
 #include <cmath>
 #include <cassert>  // assert
 #include <algorithm>  // std::swap
@@ -70,7 +69,7 @@ public:
 	}
 	virtual std::string json() const override {
 		std::stringstream ss;
-		ss.precision(std::numeric_limits<double>::digits10);
+		ss.precision(17);
 		ss
 			<< "{"
 				<< "\"class\":" << "\"Line\"" << ","
@@ -113,7 +112,7 @@ public:
 	}
 	virtual std::string json() const override {
 		std::stringstream ss;
-		ss.precision(std::numeric_limits<double>::digits10);
+		ss.precision(17);
 		ss
 			<< "{"
 				<< "\"class\":" << "\"Segment\"" << ","
@@ -137,9 +136,9 @@ public:
 	Arc(Arc const& a) = default;
 	Arc(vec2 const& p0_, double r_, double theta_min_, double theta_max_)
 		: p0(p0_), r(r_),
-		theta_min(pfmod(theta_min_, 2*M_PI)),
+		theta_min(Globals::pfmod(theta_min_, 2*M_PI)),
 		// we add the extra term to force the arc to go around anticlockwise
-		theta_max(pfmod(theta_max_, 2*M_PI) + (pfmod(theta_max_, 2*M_PI) <= pfmod(theta_min_, 2*M_PI))*2*M_PI)
+		theta_max(Globals::pfmod(theta_max_, 2*M_PI) + (Globals::pfmod(theta_max_, 2*M_PI) <= Globals::pfmod(theta_min_, 2*M_PI))*2*M_PI)
 		{}
 	virtual ~Arc() = default;
 
@@ -159,7 +158,7 @@ public:
 	}
 	virtual std::string json() const override {
 		std::stringstream ss;
-		ss.precision(std::numeric_limits<double>::digits10);
+		ss.precision(17);
 		ss
 			<< "{"
 				<< "\"class\":" << "\"Arc\"" << ","
@@ -201,7 +200,6 @@ public:
 	}
 	virtual std::string json() const override {
 		std::stringstream ss;
-		ss.precision(std::numeric_limits<double>::digits10);
 		ss
 			<< "{"
 				<< "\"class\":" << "\"BezierCubic\"" << ","

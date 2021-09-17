@@ -8,9 +8,10 @@
 #include <iostream>
 #include <fstream>
 
-// TODO : json parser
-
 #include "argparse.hpp"
+#include "json.hpp"
+
+#include "from_json.hpp"
 
 #include "world.hpp"
 #include "ball.hpp"
@@ -43,7 +44,7 @@ void draw(World const& world) {
 		vec2 pt;
 		pt = (*curve_ptr)(0);
 		glVertex2f(pt.x/(WINDOW_WIDTH/2)-1, pt.y/(WINDOW_HEIGHT/2)-1);
-		for (double t : linspace(0, 1, 100)) {
+		for (double t : Globals::linspace(0, 1, 100)) {
 			pt = (*curve_ptr)(t);
 			glVertex2f(pt.x/(WINDOW_WIDTH/2)-1, pt.y/(WINDOW_HEIGHT/2)-1);
 		}
@@ -57,6 +58,9 @@ void draw(World const& world) {
 
 int main(int argc, char const *argv[]) {
 	argparse::ArgumentParser parser("chaotic billiard");
+
+	parser.add_argument("worldfile")
+		.help(".json file containing world information");
 
 	parser.add_argument("--window")
 		.help("display a render window")
@@ -85,47 +89,14 @@ int main(int argc, char const *argv[]) {
 
 	parser.parse_args(argc, argv);
 
-	World world;
-	world.add_curve(std::make_shared<Arc>(vec2(250, 250), 100, 0, 2*M_PI));
-	// for (double angle : linspace(0, 2*M_PI, 10000))
-	// 	world.add_ball(std::make_shared<Ball>(vec2(250, 250), vec2(std::cos(angle), std::sin(angle))));
-	for (double y : linspace(200, 300, 10000))
-		world.add_ball(std::make_shared<Ball>(vec2(250, y), vec2(1, 0)));
-
-	// World world;
-	// world.add_curve(std::make_shared<Segment>(vec2(500, 100), vec2(800, 200)));
-	// world.add_curve(std::make_shared<Segment>(vec2(800, 200), vec2(800, 400)));
-	// world.add_curve(std::make_shared<Segment>(vec2(800, 400), vec2(450, 350)));
-	// world.add_curve(std::make_shared<Segment>(vec2(450, 350), vec2(500, 100)));
-
-	// world.add_curve(std::make_shared<Segment>(vec2(100, 100), vec2(400, 100)));
-	// world.add_curve(std::make_shared<Segment>(vec2(400, 100), vec2(400, 400)));
-	// world.add_curve(std::make_shared<Segment>(vec2(400, 400), vec2(100, 400)));
-	// world.add_curve(std::make_shared<Segment>(vec2(100, 400), vec2(100, 100)));
-
-	// world.add_curve(std::make_shared<BezierCubic>(vec2(700, 450), vec2(-100, 1000), vec2(1000, 1000), vec2(50, 500)));
-	// world.add_curve(std::make_shared<Segment>(vec2(700, 450), vec2(50, 500)));
-
-	// world.add_curve(std::make_shared<Arc>(vec2(1000, 700), 150, 0, M_PI));
-	// world.add_curve(std::make_shared<Segment>(vec2(850, 700), vec2(850, 500)));
-	// world.add_curve(std::make_shared<Segment>(vec2(1150, 700), vec2(1150, 500)));
-	// world.add_curve(std::make_shared<Arc>(vec2(1000, 500), 150, M_PI, 2*M_PI));
-
-	// world.add_curve(std::make_shared<Arc>(vec2(1000, 200), 100, 0, 2*M_PI));
-
-	// for (double angle : linspace(0, 2*M_PI, 1000)) {
-	// 	world.add_ball(std::make_shared<Ball>(vec2(250, 250), vec2(std::cos(angle), std::sin(angle))));
-	// 	world.add_ball(std::make_shared<Ball>(vec2(600, 250), vec2(std::cos(angle), std::sin(angle))));
-	// 	world.add_ball(std::make_shared<Ball>(vec2(420, 650), vec2(std::cos(angle), std::sin(angle))));
-	// 	world.add_ball(std::make_shared<Ball>(vec2(420, 820), vec2(std::cos(angle), std::sin(angle))));
-	// 	world.add_ball(std::make_shared<Ball>(vec2(1000, 600), vec2(std::cos(angle), std::sin(angle))));
-	// 	world.add_ball(std::make_shared<Ball>(vec2(1050, 200), vec2(std::cos(angle), std::sin(angle))));
-	// }
-
-	// std::ofstream file;
-	// file.open("world_debug.json");
-	// file << world.json() << std::endl;
-	// file.close();
+	// Parse world
+	std::ifstream file(parser.get<std::string>("worldfile"));
+	if (!file)
+		throw std::runtime_error("failed to open file `" + parser.get<std::string>("worldfile") + "`");
+	nlohmann::json j;
+	file >> j;
+	World world(World_from_json(j));
+	// std::cout << world.str() << std::endl;
 
 	if (parser.get<bool>("--window") || parser.get<bool>("--render")) {
 		sf::RenderTexture texture;
@@ -136,7 +107,7 @@ int main(int argc, char const *argv[]) {
 		double duration(parser.get<double>("--duration"));
 		double dt(duration/(nsamples-1));
 
-		if (parser["--window"] == true) {
+		if (parser.get<bool>("--window")) {
 			// Rendering with a window
 			sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "chaotic billiard");
 			sf::Clock clock;

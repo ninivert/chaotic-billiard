@@ -7,6 +7,8 @@
 #include <limits>
 #include "globals.h"
 
+// TODO : different EPS here ?
+
 namespace Polynomial {
 	double const nan(std::numeric_limits<double>::quiet_NaN());
 
@@ -23,7 +25,7 @@ namespace Polynomial {
 		constexpr double cos120 = -0.50;
 		constexpr double sin120 = 0.866025403784438646764;
 
-		if (std::fabs(d) < EPS) {
+		if (Globals::iszero(d)) {
 			// First solution is x = 0
 			roots.push_back(0.0);
 
@@ -34,10 +36,10 @@ namespace Polynomial {
 			a = 0.0;
 		}
 
-		if (std::fabs(a) < EPS) {
-			if (std::fabs(b) < EPS) {
+		if (Globals::iszero(a)) {
+			if (Globals::iszero(b)) {
 				// Linear equation
-				if (std::fabs(c) > EPS)
+				if (!Globals::iszero(c))
 					roots.push_back(-d / c);
 			}
 			else {
@@ -61,7 +63,7 @@ namespace Polynomial {
 			double halfq = (2.0 * bb * b - 9.0 * a * b * c + 27.0 * a * a * d) * (0.5 / 27.0) * invaa * inva;
 			double yy = p * p * p / 27.0 + halfq * halfq;
 
-			if (yy > EPS) {
+			if (!Globals::iszero(yy) && yy > 0) {
 				// Sqrt is positive: one real solution
 				double y = std::sqrt(yy);
 				double uuu = -halfq + y;
@@ -70,7 +72,7 @@ namespace Polynomial {
 				double w = (www < 0) ? -std::pow(std::fabs(www), 1.0 / 3.0) : std::pow(www, 1.0 / 3.0);
 				roots.push_back(w - p / (3.0 * w) - bover3a);
 			}
-			else if (yy < -EPS) {
+			else if (!Globals::iszero(yy) && yy < 0) {
 				// Sqrt is negative: three real solutions
 				double x = -halfq;
 				double y = std::sqrt(-yy);
@@ -79,7 +81,7 @@ namespace Polynomial {
 				double ux;
 				double uyi;
 				// Convert to polar form
-				if (std::fabs(x) > EPS) {
+				if (std::fabs(x) > Globals::EPS) {
 					theta = (x > 0.0) ? std::atan(y / x) : (std::atan(y / x) + M_PI);
 					r = std::sqrt(x * x - yy);
 				}

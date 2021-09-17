@@ -15,8 +15,8 @@ class BezierCubic;
 namespace Collider {
 	struct ParamPair {
 		double t1, t2;
-		bool on_first() const { return 0 - EPS <= t1 && t1 <= 1 + EPS; }
-		bool on_second() const { return 0 - EPS <= t2 && t2 <= 1 + EPS; }
+		bool on_first() const { return 0 - Globals::EPS <= t1 && t1 <= 1 + Globals::EPS; }
+		bool on_second() const { return 0 - Globals::EPS <= t2 && t2 <= 1 + Globals::EPS; }
 		bool on_both() const { return on_first() && on_second(); }
 		std::string str() const { return "ParamPair(t1=" + std::to_string(t1) + ", t2=" + std::to_string(t2) + ")" ; }
 	};

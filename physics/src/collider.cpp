@@ -3,6 +3,8 @@
 #include "logger.hpp"
 #include <algorithm>  // std::swap
 
+using namespace Globals;
+
 //
 // Line - ...
 //

@@ -1,5 +1,7 @@
 #include "curve.hpp"
 
+using namespace Globals;
+
 //
 // Line
 //
@@ -20,6 +22,7 @@ Line::operator Segment() const {
 }
 
 vec2 Line::operator()(double t, unsigned int order /*= 0 */) const {
+	(void) t; (void) order;
 	Segment seg = Segment(*this);  // create a mock-up segment
 	double s = std::atanh(2*t-1);  // map [0, 1] -> [-inf, inf]
 	return (1-s)*seg.p1 + s*seg.p2;
@@ -33,10 +36,12 @@ double Line::inverse(vec2 const& point) const {
 }
 
 vec2 Line::ortho(double t) const {
+	(void) t;
 	return vec2(p, q);
 }
 
 vec2 Line::tangent(double t) const {
+	(void) t;
 	return vec2(-q, p);
 }
 
@@ -64,7 +69,12 @@ Segment::operator Line() const {
 }
 
 vec2 Segment::operator()(double t, unsigned int order /* = 0 */) const {
-	return (1-t)*p1 + t*p2;
+	if (order == 0)
+		return (1-t)*p1 + t*p2;
+	if (order == 1)
+		return p2 - p1;
+	else
+		return vec2(0, 0);
 }
 
 double Segment::inverse(vec2 const& point) const {

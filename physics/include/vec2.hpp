@@ -4,7 +4,6 @@
 #include <cmath>
 #include <string>
 #include <sstream>
-#include <limits>
 
 struct vec2 {
 	double x, y;
@@ -115,7 +114,7 @@ struct vec2 {
 
 	std::string json() const {
 		std::stringstream ss;
-		ss.precision(std::numeric_limits<double>::digits10);
+		ss.precision(17);
 		ss
 			<< "{"
 				<< "\"class\":" << "\"vec2\"" << ","
