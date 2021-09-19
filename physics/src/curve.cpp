@@ -126,7 +126,7 @@ vec2 Arc::operator()(double t, unsigned int order /* = 0 */) const {
 double Arc::inverse(vec2 const& point) const {
 	vec2 relpoint(point - p0);
 	double theta(pfmod(std::atan2(relpoint.y, relpoint.x), 2*M_PI));
-	return ilerp(theta_min, theta_max, theta);
+	return ilerp(0, pfmod(theta_max-theta_min, 2*M_PI), pfmod(theta-theta_min, 2*M_PI));
 }
 
 vec2 Arc::ortho(double t) const {
