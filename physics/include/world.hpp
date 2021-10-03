@@ -9,9 +9,10 @@
 #include <vector>
 #include <unordered_set>
 #include <algorithm>  // std::min_element
+#include <string>  // std::string
 #include <sstream>  // std::stringstream
-#include <memory>
-#include <string>
+#include <iostream>  // std::ostream
+#include <memory>  // std::shared_ptr
 
 class World {
 	typedef std::shared_ptr<Ball> BallPtr;
@@ -158,9 +159,10 @@ public:
 			<< "}";
 		return ss.str();
 	}
-
-	// TODO
-	// static World from_json(std::string const& json);
 };
+
+static std::ostream& operator<<(std::ostream& stream, World const& world) {
+	return stream << world.str() << std::endl;
+}
 
 #endif

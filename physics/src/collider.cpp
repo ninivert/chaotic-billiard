@@ -33,6 +33,11 @@ Collider::ParamPairs Collider::line_arc(Line const& line, Arc const& arc) {
 	return tpairs;
 }
 
+Collider::ParamPairs Collider::line_ellipse(Line const& line, Ellipse const& ellipse) {
+	// TODO
+	return { { 0, 0 } };
+}
+
 Collider::ParamPairs Collider::line_beziercubic(Line const& line, BezierCubic const& bezier) {
 	std::vector<double> roots(params_line_beziercubic(line, bezier));
 	Collider::ParamPairs tpairs;
@@ -65,6 +70,11 @@ Collider::ParamPairs Collider::segment_arc(Segment const& seg, Arc const& arc) {
 	for (vec2 const& interpt : interpts)
 		tpairs.push_back({ seg.inverse(interpt), arc.inverse(interpt) });
 	return tpairs;
+}
+
+Collider::ParamPairs Collider::segment_ellipse(Segment const& seg, Ellipse const& ellipse) {
+	// TODO
+	return { {0,0} };
 }
 
 Collider::ParamPairs Collider::segment_beziercubic(Segment const& seg, BezierCubic const& bezier) {
@@ -100,10 +110,42 @@ Collider::ParamPairs Collider::arc_arc(Arc const& arc1, Arc const& arc2) {
 	return { {0,0} };
 }
 
+Collider::ParamPairs Collider::arc_ellipse(Arc const& arc, Ellipse const& ellipse) {
+	// TODO
+	return { {0,0} };
+}
+
 Collider::ParamPairs Collider::arc_beziercubic(Arc const& arc, BezierCubic const& bezier) {
 	// TODO
 	return { { 0, 0 } };
 }
+
+//
+// Ellipse - ...
+//
+
+
+Collider::ParamPairs Collider::ellipse_line(Ellipse const& ellipse, Line const& line) {
+	// TODO
+	return {{0,0}};
+}
+Collider::ParamPairs Collider::ellipse_segment(Ellipse const& ellipse, Segment const& seg) {
+	// TODO
+	return {{0,0}};
+}
+Collider::ParamPairs Collider::ellipse_arc(Ellipse const& ellipse, Arc const& arc2) {
+	// TODO
+	return {{0,0}};
+}
+Collider::ParamPairs Collider::ellipse_ellipse(Ellipse const& ellipse1, Ellipse const& ellipse2) {
+	// TODO
+	return {{0,0}};
+}
+Collider::ParamPairs Collider::ellipse_beziercubic(Ellipse const& ellipse, BezierCubic const& bezier) {
+	// TODO
+	return {{0,0}};
+}
+
 
 //
 // BezierCubic - ...
@@ -124,6 +166,11 @@ Collider::ParamPairs Collider::beziercubic_segment(BezierCubic const& bezier, Se
 }
 
 Collider::ParamPairs Collider::beziercubic_arc(BezierCubic const& bezier, Arc const& arc) {
+	// TODO
+	return { {0,0} };
+}
+
+Collider::ParamPairs Collider::beziercubic_ellipse(BezierCubic const& bezier, Ellipse const& ellipse) {
 	// TODO
 	return { {0,0} };
 }

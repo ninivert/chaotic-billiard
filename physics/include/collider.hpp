@@ -10,6 +10,7 @@
 class Line;
 class Segment;
 class Arc;
+class Ellipse;
 class BezierCubic;
 
 namespace Collider {
@@ -25,21 +26,31 @@ namespace Collider {
 	ParamPairs line_line(Line const& l1, Line const& l2);
 	ParamPairs line_segment(Line const& line, Segment const& seg);
 	ParamPairs line_arc(Line const& line, Arc const& arc);
+	ParamPairs line_ellipse(Line const& line, Ellipse const& ellipse);
 	ParamPairs line_beziercubic(Line const& line, BezierCubic const& bezier);
 
 	ParamPairs segment_line(Segment const& seg, Line const& line);
 	ParamPairs segment_segment(Segment const& s1, Segment const& s2);
 	ParamPairs segment_arc(Segment const& seg, Arc const& arc);
+	ParamPairs segment_ellipse(Segment const& seg, Ellipse const& ellipse);
 	ParamPairs segment_beziercubic(Segment const& seg, BezierCubic const& bezier);
 
 	ParamPairs arc_line(Arc const& arc, Line const& line);
 	ParamPairs arc_segment(Arc const& arc, Segment const& seg);
 	ParamPairs arc_arc(Arc const& arc1, Arc const& arc2);
+	ParamPairs arc_ellipse(Arc const& arc, Ellipse const& ellipse);
 	ParamPairs arc_beziercubic(Arc const& arc, BezierCubic const& bezier);
+
+	ParamPairs ellipse_line(Ellipse const& ellipse, Line const& line);
+	ParamPairs ellipse_segment(Ellipse const& ellipse, Segment const& seg);
+	ParamPairs ellipse_arc(Ellipse const& ellipse, Arc const& arc2);
+	ParamPairs ellipse_ellipse(Ellipse const& ellipse1, Ellipse const& ellipse2);
+	ParamPairs ellipse_beziercubic(Ellipse const& ellipse, BezierCubic const& bezier);
 
 	ParamPairs beziercubic_line(BezierCubic const& bezier, Line const& line);
 	ParamPairs beziercubic_segment(BezierCubic const& bezier, Segment const& seg);
 	ParamPairs beziercubic_arc(BezierCubic const& bezier, Arc const& arc);
+	ParamPairs beziercubic_ellipse(BezierCubic const& bezier, Ellipse const& ellipse);
 	ParamPairs beziercubic_beziercubic(BezierCubic const& b1, BezierCubic const& b2);
 
 	vec2 point_line_line(Line const& l1, Line const& l2);

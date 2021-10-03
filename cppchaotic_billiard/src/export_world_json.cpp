@@ -51,10 +51,7 @@ int main() {
 
 	world = World();
 	world.add_curve(std::make_shared<Arc>(vec2(150, 250), 100, M_PI/2, 3*M_PI/2));
-	// TODO : collision bugs !
 	world.add_curve(std::make_shared<Arc>(vec2(350, 250), 100, 3*M_PI/2, M_PI/2));
-	// world.add_curve(std::make_shared<Arc>(vec2(350, 250), 100, 0, M_PI/2));
-	// world.add_curve(std::make_shared<Arc>(vec2(350, 250), 100, 3*M_PI/2, 2*M_PI));
 	world.add_curve(std::make_shared<Segment>(vec2(150, 150), vec2(350, 150)));
 	world.add_curve(std::make_shared<Segment>(vec2(150, 350), vec2(350, 350)));
 	for (double angle : Globals::linspace(0, 2*M_PI, 10000))

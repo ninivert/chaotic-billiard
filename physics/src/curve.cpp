@@ -54,6 +54,7 @@ Collider::ParamPairs Line::collide(Curve const& curve) const {
 Collider::ParamPairs Line::collide(Line const& line) const { return Collider::line_line(*this, line); }
 Collider::ParamPairs Line::collide(Segment const& seg) const { return Collider::line_segment(*this, seg); }
 Collider::ParamPairs Line::collide(Arc const& arc) const { return Collider::line_arc(*this, arc); }
+Collider::ParamPairs Line::collide(Ellipse const& ellipse) const { return Collider::line_ellipse(*this, ellipse); }
 Collider::ParamPairs Line::collide(BezierCubic const& bezier) const { return Collider::line_beziercubic(*this, bezier); }
 
 //
@@ -109,6 +110,7 @@ Collider::ParamPairs Segment::collide(Curve const& curve) const {
 Collider::ParamPairs Segment::collide(Line const& line) const { return Collider::segment_line(*this, line); }
 Collider::ParamPairs Segment::collide(Segment const& seg) const { return Collider::segment_segment(*this, seg); }
 Collider::ParamPairs Segment::collide(Arc const& arc) const { return Collider::segment_arc(*this, arc); }
+Collider::ParamPairs Segment::collide(Ellipse const& ellipse) const { return Collider::segment_ellipse(*this, ellipse); }
 Collider::ParamPairs Segment::collide(BezierCubic const& bezier) const { return Collider::segment_beziercubic(*this, bezier); }
 
 //
@@ -126,7 +128,8 @@ vec2 Arc::operator()(double t, unsigned int order /* = 0 */) const {
 double Arc::inverse(vec2 const& point) const {
 	vec2 relpoint(point - p0);
 	double theta(pfmod(std::atan2(relpoint.y, relpoint.x), 2*M_PI));
-	return ilerp(0, pfmod(theta_max-theta_min, 2*M_PI), pfmod(theta-theta_min, 2*M_PI));
+	double b(pfmod(theta_max-theta_min, 2*M_PI));
+	return ilerp(0, b + Globals::iszero(b)*2*M_PI, pfmod(theta-theta_min, 2*M_PI));
 }
 
 vec2 Arc::ortho(double t) const {
@@ -147,8 +150,48 @@ Collider::ParamPairs Arc::collide(Curve const& curve) const {
 Collider::ParamPairs Arc::collide(Line const& line) const { return Collider::arc_line(*this, line); }
 Collider::ParamPairs Arc::collide(Segment const& seg) const { return Collider::arc_segment(*this, seg); }
 Collider::ParamPairs Arc::collide(Arc const& arc) const { return Collider::arc_arc(*this, arc); }
+Collider::ParamPairs Arc::collide(Ellipse const& ellipse) const { return Collider::arc_ellipse(*this, ellipse); }
 Collider::ParamPairs Arc::collide(BezierCubic const& bezier) const { return Collider::arc_beziercubic(*this, bezier); }
 
+//
+// Ellipse
+//
+
+vec2 Ellipse::operator()(double t, unsigned int order /* = 0 */) const {
+	double theta(lerp(theta_min, theta_max, t));
+	vec2 point(a*std::cos(theta), b*std::sin(theta));
+	point.rotate(phi);
+	point += p0;
+	return point;
+}
+
+double Ellipse::inverse(vec2 const& point) const {
+	vec2 relpoint(point - p0);
+	relpoint.rotate(-phi);
+	double theta(pfmod(std::atan2(relpoint.y, relpoint.x), 2*M_PI));
+	return ilerp(0, pfmod(theta_max-theta_min, 2*M_PI), pfmod(theta-theta_min, 2*M_PI));
+}
+
+vec2 Ellipse::ortho(double t) const {
+	return tangent(t).ortho();
+}
+
+vec2 Ellipse::tangent(double t) const {
+	double theta(lerp(theta_min, theta_max, t));
+	return vec2(-a*std::sin(theta), b*std::cos(theta));
+}
+
+Collider::ParamPairs Ellipse::collide(Curve const& curve) const {
+	Collider::ParamPairs tpairs = curve.collide(*this);
+	for (Collider::ParamPair& tpair : tpairs)
+		std::swap(tpair.t1, tpair.t2);
+	return tpairs;
+}
+Collider::ParamPairs Ellipse::collide(Line const& line) const { return Collider::ellipse_line(*this, line); }
+Collider::ParamPairs Ellipse::collide(Segment const& seg) const { return Collider::ellipse_segment(*this, seg); }
+Collider::ParamPairs Ellipse::collide(Arc const& arc) const { return Collider::ellipse_arc(*this, arc); }
+Collider::ParamPairs Ellipse::collide(Ellipse const& ellipse) const { return Collider::ellipse_ellipse(*this, ellipse); }
+Collider::ParamPairs Ellipse::collide(BezierCubic const& bezier) const { return Collider::ellipse_beziercubic(*this, bezier); }
 
 //
 // BezierCubic
@@ -199,4 +242,5 @@ Collider::ParamPairs BezierCubic::collide(Curve const& curve) const {
 Collider::ParamPairs BezierCubic::collide(Line const& line) const { return Collider::beziercubic_line(*this, line); }
 Collider::ParamPairs BezierCubic::collide(Segment const& seg) const { return Collider::beziercubic_segment(*this, seg); }
 Collider::ParamPairs BezierCubic::collide(Arc const& arc) const { return Collider::beziercubic_arc(*this, arc); }
+Collider::ParamPairs BezierCubic::collide(Ellipse const& ellipse) const { return Collider::beziercubic_ellipse(*this, ellipse); }
 Collider::ParamPairs BezierCubic::collide(BezierCubic const& bezier) const { return Collider::beziercubic_beziercubic(*this, bezier); }

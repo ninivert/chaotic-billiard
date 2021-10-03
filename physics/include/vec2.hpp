@@ -4,6 +4,7 @@
 #include <cmath>
 #include <string>
 #include <sstream>
+#include <iostream>
 
 struct vec2 {
 	double x, y;
@@ -69,13 +70,14 @@ struct vec2 {
 		return *this;
 	}
 
-	void rotate(double theta) {
+	vec2& rotate(double theta) {
 		double c = std::cos(theta);
 		double s = std::sin(theta);
 		double tx = x * c - y * s;
 		double ty = x * s + y * c;
 		x = tx;
 		y = ty;
+		return *this;
 	}
 
 	vec2& normalize() {
@@ -127,5 +129,9 @@ struct vec2 {
 		return ss.str();
 	}
 };
+
+static std::ostream& operator<<(std::ostream& stream, vec2 const& v) {
+	return stream << v.str() << std::endl;
+}
 
 #endif

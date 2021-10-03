@@ -12,8 +12,11 @@ namespace Globals {
 	extern bool iszero(double x, double eps = 1e-15);
 	// linear interpolation
 	extern double lerp(double x, double y, double t);
+	// inverse linear interpolation
 	extern double ilerp(double x, double y, double s);
+	// positive float modulus
 	extern double pfmod(double x, double y);
+	// linspace (mimick python numpy.linspace)
 	extern std::vector<double> linspace(double start, double end, unsigned int n);
 }
 

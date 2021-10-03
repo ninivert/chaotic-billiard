@@ -1,7 +1,6 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/OpenGL.hpp>
-// #include <SFML/System.hpp>
 
 #include <memory>  // std::make_shared
 #include <cmath>
@@ -96,7 +95,6 @@ int main(int argc, char const *argv[]) {
 	nlohmann::json j;
 	file >> j;
 	World world(World_from_json(j));
-	// std::cout << world.str() << std::endl;
 
 	if (parser.get<bool>("--window") || parser.get<bool>("--render")) {
 		sf::RenderTexture texture;
@@ -109,6 +107,7 @@ int main(int argc, char const *argv[]) {
 
 		if (parser.get<bool>("--window")) {
 			// Rendering with a window
+			// TODO : use renderer.hpp SFMLRenderer
 			sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "chaotic billiard");
 			sf::Clock clock;
 			unsigned int frame_n(0);

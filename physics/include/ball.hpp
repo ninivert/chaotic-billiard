@@ -2,9 +2,11 @@
 #define __BALL_HPP__
 
 #include "vec2.hpp"
-#include <string>
-#include <sstream>
-#include <limits>
+#include <string>  // std::string
+#include <sstream>  // std::stringstream
+#include <iostream>  // std::ostream
+
+// TODO : do we need polymorphism for the Balls ?
 
 class Ball {
 public:
@@ -34,6 +36,8 @@ public:
 	}
 };
 
-// TODO : ostream methods
+static std::ostream& operator<<(std::ostream& stream, Ball const& ball) {
+	return stream << ball.str() << std::endl;
+}
 
 #endif

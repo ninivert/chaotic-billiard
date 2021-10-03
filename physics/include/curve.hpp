@@ -3,6 +3,7 @@
 
 #include <string>  // std::string
 #include <sstream>  // std::stringstream
+#include <iostream>  // std::ostream
 #include <cmath>
 #include <cassert>  // assert
 #include <algorithm>  // std::swap
@@ -16,7 +17,9 @@ class Curve;
 class Line;
 class Segment;
 class Arc;
+class Ellipse;
 class BezierCubic;
+
 namespace Collider {
 	struct ParamPair;
 	typedef std::vector<ParamPair> ParamPairs;
@@ -36,6 +39,7 @@ public:
 	virtual Collider::ParamPairs collide(Line const& line) const = 0;
 	virtual Collider::ParamPairs collide(Segment const& seg) const = 0;
 	virtual Collider::ParamPairs collide(Arc const& arc) const = 0;
+	virtual Collider::ParamPairs collide(Ellipse const& ellipse) const = 0;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const = 0;
 
 	virtual std::string str() const = 0;
@@ -62,6 +66,7 @@ public:
 	virtual Collider::ParamPairs collide(Line const& line) const override;
 	virtual Collider::ParamPairs collide(Segment const& seg) const override;
 	virtual Collider::ParamPairs collide(Arc const& arc) const override;
+	virtual Collider::ParamPairs collide(Ellipse const& ellipse) const override;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
 
 	virtual std::string str() const override {
@@ -105,6 +110,7 @@ public:
 	virtual Collider::ParamPairs collide(Line const& line) const override;
 	virtual Collider::ParamPairs collide(Segment const& seg) const override;
 	virtual Collider::ParamPairs collide(Arc const& arc) const override;
+	virtual Collider::ParamPairs collide(Ellipse const& ellipse) const override;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
 
 	virtual std::string str() const override {
@@ -151,6 +157,7 @@ public:
 	virtual Collider::ParamPairs collide(Line const& line) const override;
 	virtual Collider::ParamPairs collide(Segment const& seg) const override;
 	virtual Collider::ParamPairs collide(Arc const& arc) const override;
+	virtual Collider::ParamPairs collide(Ellipse const& ellipse) const override;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
 
 	virtual std::string str() const override {
@@ -166,6 +173,58 @@ public:
 				<< "{"
 					<< "\"p0\":" << p0.json() << ","
 					<< "\"r\":" << r << ","
+					<< "\"theta_min\":" << theta_min << ","
+					<< "\"theta_max\":" << theta_max
+				<< "}"
+			<< "}";
+		return ss.str();
+	}
+};
+
+class Ellipse : public Curve {
+public:
+	vec2 p0;
+	double a, b;
+	double phi, theta_min, theta_max;
+
+	Ellipse() = default;
+	Ellipse(Ellipse const& a) = default;
+	Ellipse(vec2 const& p0_, double a_, double b_, double phi_, double theta_min_, double theta_max_)
+		: p0(p0_), a(a_), b(b_),
+		phi(Globals::pfmod(phi_, 2*M_PI)),
+		theta_min(Globals::pfmod(theta_min_, 2*M_PI)),
+		// we add the extra term to force the arc to go around anticlockwise
+		theta_max(Globals::pfmod(theta_max_, 2*M_PI) + (Globals::pfmod(theta_max_, 2*M_PI) <= Globals::pfmod(theta_min_, 2*M_PI))*2*M_PI)
+		{}
+	virtual ~Ellipse() = default;
+
+	virtual vec2 operator()(double t, unsigned int order = 0) const override;
+	virtual double inverse(vec2 const& point) const override;
+	virtual vec2 ortho(double t) const override;
+	virtual vec2 tangent(double t) const override;
+
+	virtual Collider::ParamPairs collide(Curve const& curve) const override;
+	virtual Collider::ParamPairs collide(Line const& line) const override;
+	virtual Collider::ParamPairs collide(Segment const& seg) const override;
+	virtual Collider::ParamPairs collide(Arc const& arc) const override;
+	virtual Collider::ParamPairs collide(Ellipse const& ellipse) const override;
+	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
+
+	virtual std::string str() const override {
+		return "Ellipse(p0=" + p0.str() + ", a=" + std::to_string(a) + ", b=" + std::to_string(b) + ", phi=" + std::to_string(phi) + ", theta_min=" + std::to_string(theta_min) + ", theta_max=" + std::to_string(theta_max) + ")";
+	}
+	virtual std::string json() const override {
+		std::stringstream ss;
+		ss.precision(17);
+		ss
+			<< "{"
+				<< "\"class\":" << "\"Arc\"" << ","
+				<< "\"parameters\":"
+				<< "{"
+					<< "\"p0\":" << p0.json() << ","
+					<< "\"a\":" << a << ","
+					<< "\"b\":" << b << ","
+					<< "\"phi\":" << phi << ","
 					<< "\"theta_min\":" << theta_min << ","
 					<< "\"theta_max\":" << theta_max
 				<< "}"
@@ -193,6 +252,7 @@ public:
 	virtual Collider::ParamPairs collide(Line const& line) const override;
 	virtual Collider::ParamPairs collide(Segment const& seg) const override;
 	virtual Collider::ParamPairs collide(Arc const& arc) const override;
+	virtual Collider::ParamPairs collide(Ellipse const& ellipse) const override;
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override;
 
 	virtual std::string str() const override {
@@ -214,5 +274,9 @@ public:
 		return ss.str();
 	}
 };
+
+static std::ostream& operator<<(std::ostream& stream, Curve const& curve) {
+	return stream << curve.str() << std::endl;
+}
 
 #endif
