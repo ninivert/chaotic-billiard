@@ -1,4 +1,4 @@
-#include "curve.hpp"
+#include "physics/curve.hpp"
 
 using namespace Globals;
 

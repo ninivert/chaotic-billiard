@@ -5,12 +5,12 @@
 #include <memory> // std::make_shared
 #include <iostream>
 
-#include "world.hpp"
-#include "ball.hpp"
-#include "curve.hpp"
-#include "vec2.hpp"
+#include "physics/world.hpp"
+#include "physics/ball.hpp"
+#include "physics/curve.hpp"
+#include "physics/vec2.hpp"
 
-#include "json.hpp"
+#include "json/json.hpp"
 
 // Utility functions to parse json
 // These methods are not in the physics classes,

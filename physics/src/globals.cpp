@@ -1,4 +1,4 @@
-#include "globals.h"
+#include "physics/globals.h"
 
 namespace Globals {
 	extern double constexpr EPS(1e-10);

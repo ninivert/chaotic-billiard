@@ -7,15 +7,15 @@
 #include <iostream>
 #include <fstream>
 
-#include "argparse.hpp"
-#include "json.hpp"
+#include "gui/from_json.hpp"
 
-#include "from_json.hpp"
+#include "argparse/argparse.hpp"
+#include "json/json.hpp"
 
-#include "world.hpp"
-#include "ball.hpp"
-#include "curve.hpp"
-#include "vec2.hpp"
+#include "physics/world.hpp"
+#include "physics/ball.hpp"
+#include "physics/curve.hpp"
+#include "physics/vec2.hpp"
 
 // unsigned int WINDOW_WIDTH(1200), WINDOW_HEIGHT(900);
 unsigned int WINDOW_WIDTH(500), WINDOW_HEIGHT(500);

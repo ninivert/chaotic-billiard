@@ -1,6 +1,6 @@
-#include "collider.hpp"
-#include "polynomial.hpp"  // Polynomial::roots_cubic
-#include "logger.hpp"
+#include "physics/collider.hpp"
+#include "physics/polynomial.hpp"  // Polynomial::roots_cubic
+#include "physics/logger.hpp"
 #include <algorithm>  // std::swap
 
 using namespace Globals;
