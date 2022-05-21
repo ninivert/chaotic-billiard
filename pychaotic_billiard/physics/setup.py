@@ -4,7 +4,7 @@ from pybind11.setup_helpers import Pybind11Extension
 ext_modules = [
 	Pybind11Extension(
 		'physics',
-		['../../physics/src/collider.cpp', '../../physics/src/curve.cpp', 'pybind.cpp'],
+		['../../physics/src/collider.cpp', '../../physics/src/curve.cpp', '../../physics/src/globals.cpp', '../../physics/src/logger.cpp', 'pybind.cpp'],
 		include_dirs=['../../physics/include']
 	)
 ]

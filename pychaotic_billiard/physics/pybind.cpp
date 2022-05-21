@@ -6,12 +6,12 @@
 #include <pybind11/operators.h>
 #include <pybind11/stl.h>
 
-#include "globals.h"
-#include "logger.hpp"
-#include "vec2.hpp"
-#include "ball.hpp"
-#include "curve.hpp"
-#include "world.hpp"
+#include "physics/globals.h"
+#include "physics/logger.hpp"
+#include "physics/vec2.hpp"
+#include "physics/ball.hpp"
+#include "physics/curve.hpp"
+#include "physics/world.hpp"
 
 namespace py = pybind11;
 
@@ -42,6 +42,7 @@ public:
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE_PURE(Collider::ParamPairs, Curve, collide, bezier); }
 
 	virtual std::string str() const override { PYBIND11_OVERRIDE_PURE(std::string, Curve, str); }
+	virtual std::string json() const override { PYBIND11_OVERRIDE_PURE(std::string, Curve, json); }
 };
 
 class PyLine : public Line, public py::trampoline_self_life_support {
@@ -59,6 +60,7 @@ public:
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Line, collide, bezier); }
 
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Line, str); }
+	virtual std::string json() const override { PYBIND11_OVERRIDE(std::string, Line, json); }
 };
 
 class PySegment : public Segment, public py::trampoline_self_life_support {
@@ -76,6 +78,7 @@ public:
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Segment, collide, bezier); }
 
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Segment, str); }
+	virtual std::string json() const override { PYBIND11_OVERRIDE(std::string, Segment, json); }
 };
 
 class PyArc : public Arc, public py::trampoline_self_life_support {
@@ -93,6 +96,7 @@ public:
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, Arc, collide, bezier); }
 
 	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, Arc, str); }
+	virtual std::string json() const override { PYBIND11_OVERRIDE(std::string, Arc, json); }
 };
 
 class PyBezierCubic : public BezierCubic, public py::trampoline_self_life_support {
@@ -109,7 +113,7 @@ public:
 	virtual Collider::ParamPairs collide(Arc const& arc) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, arc); }
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, bezier); }
 
-	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, BezierCubic, str); }
+	virtual std::string json() const override { PYBIND11_OVERRIDE(std::string, BezierCubic, json); }
 };
 
 // Publicist for binding protected member functions
@@ -171,7 +175,8 @@ PYBIND11_MODULE(physics, m) {
 			if (index == 1) return v.y;
 			throw std::out_of_range("out of bounds index `" + std::to_string(index) + "` on vec2 instance");
 		})
-		.def("__repr__", &vec2::str);
+		.def("__repr__", &vec2::str)
+		.def("json", &vec2::json);
 
 	py::classh<Ball, PyBall>(m, "Ball")
 		.def_readwrite("pos", &Ball::pos)
@@ -180,7 +185,8 @@ PYBIND11_MODULE(physics, m) {
 		.def(py::init<>())
 		.def(py::init<vec2 const&, vec2 const&>())
 		.def(py::init<PyBall const&>())
-		.def("__repr__", &Ball::str);
+		.def("__repr__", &Ball::str)
+		.def("json", &Ball::json);
 
 	py::classh<Curve, PyCurve>(m, "Curve")
 		.def("ortho", &Curve::ortho)
@@ -191,7 +197,8 @@ PYBIND11_MODULE(physics, m) {
 		.def("collide", static_cast<Collider::ParamPairs (Curve::*)(BezierCubic const&) const>(&Curve::collide))
 		.def("inverse", &Curve::inverse)
 		.def("__call__", &Curve::operator(), py::arg("t"), py::arg("order") = 0)
-		.def("__repr__", &Curve::str);
+		.def("__repr__", &Curve::str)
+		.def("json", &Curve::json);
 
 	py::classh<Line, PyLine, Curve>(m, "Line")
 		.def_readwrite("p", &Line::p)
@@ -207,8 +214,10 @@ PYBIND11_MODULE(physics, m) {
 		.def("collide", static_cast<Collider::ParamPairs (Line::*)(Arc const&) const>(&Line::collide))
 		.def("collide", static_cast<Collider::ParamPairs (Line::*)(BezierCubic const&) const>(&Line::collide))
 		.def("inverse", &Line::inverse)
+		.def("to_segment", &Line::operator Segment)
 		.def("__call__", &Line::operator(), py::arg("t"), py::arg("order") = 0)
-		.def("__repr__", &Line::str);
+		.def("__repr__", &Line::str)
+		.def("json", &Line::json);
 
 	py::classh<Segment, PySegment, Curve>(m, "Segment")
 		.def_readwrite("p1", &Segment::p1)
@@ -223,8 +232,10 @@ PYBIND11_MODULE(physics, m) {
 		.def("collide", static_cast<Collider::ParamPairs (Segment::*)(Arc const&) const>(&Segment::collide))
 		.def("collide", static_cast<Collider::ParamPairs (Segment::*)(BezierCubic const&) const>(&Segment::collide))
 		.def("inverse", &Segment::inverse)
+		.def("to_line", &Segment::operator Line)
 		.def("__call__", &Segment::operator(), py::arg("t"), py::arg("order") = 0)
-		.def("__repr__", &Segment::str);
+		.def("__repr__", &Segment::str)
+		.def("json", &Segment::json);
 
 	py::classh<Arc, PyArc, Curve>(m, "Arc")
 		.def_readwrite("p0", &Arc::p0)
@@ -242,7 +253,8 @@ PYBIND11_MODULE(physics, m) {
 		.def("collide", static_cast<Collider::ParamPairs (Arc::*)(BezierCubic const&) const>(&Arc::collide))
 		.def("inverse", &Arc::inverse)
 		.def("__call__", &Arc::operator(), py::arg("t"), py::arg("order") = 0)
-		.def("__repr__", &Arc::str);
+		.def("__repr__", &Arc::str)
+		.def("json", &Arc::json);
 
 	py::classh<BezierCubic, PyBezierCubic, Curve>(m, "BezierCubic")
 		.def_readwrite("p1", &BezierCubic::p0)
@@ -260,7 +272,8 @@ PYBIND11_MODULE(physics, m) {
 		.def("collide", static_cast<Collider::ParamPairs (BezierCubic::*)(BezierCubic const&) const>(&BezierCubic::collide))
 		.def("inverse", &BezierCubic::inverse)
 		.def("__call__", &BezierCubic::operator(), py::arg("t"), py::arg("order") = 0)
-		.def("__repr__", &BezierCubic::str);
+		.def("__repr__", &BezierCubic::str)
+		.def("json", &BezierCubic::json);
 
 	py::class_<World>(m, "World")
 		.def(py::init<>())
@@ -270,10 +283,17 @@ PYBIND11_MODULE(physics, m) {
 		.def_property_readonly("balls", [](World const& world) {
 			return py::list(py::make_iterator(world.ball_ptrs.begin(), world.ball_ptrs.end()));
 		})
+		.def("get_ball", [](World const& world, size_t idx) {
+			return world.ball_ptrs[idx];  // much faster than generating an entire list with the balls
+		})
 		.def_property_readonly("curves", [](World const& world) {
 			return py::list(py::make_iterator(world.curve_ptrs.begin(), world.curve_ptrs.end()));
 		})
-		.def("__repr__", &World::str);
+		.def("get_curve", [](World const& world, size_t idx) {
+			return world.curve_ptrs[idx];
+		})
+		.def("__repr__", &World::str)
+		.def("json", &World::json);
 
 	py::module_ m_collider = m.def_submodule("collider", "collider utility functions");
 	py::class_<Collider::ParamPair>(m_collider, "ParamPair")
@@ -285,7 +305,7 @@ PYBIND11_MODULE(physics, m) {
 		.def("__repr__", &Collider::ParamPair::str);
 
 	py::module_ m_globals = m.def_submodule("constants", "computational constants");
-	m_globals.attr("eps") = EPS;  // TODO : make readonly
+	m_globals.attr("eps") = Globals::EPS;  // TODO : make readonly
 
 	py::module_ m_logger = m.def_submodule("logger", "logger to stdout used internally");
 	m_logger.attr("level") = Logger::level;  // TODO : make this work when changed in python

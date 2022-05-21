@@ -17,8 +17,8 @@
 #include "physics/curve.hpp"
 #include "physics/vec2.hpp"
 
-// unsigned int WINDOW_WIDTH(1200), WINDOW_HEIGHT(900);
-unsigned int WINDOW_WIDTH(500), WINDOW_HEIGHT(500);
+unsigned int WINDOW_WIDTH(1200), WINDOW_HEIGHT(900);
+// unsigned int WINDOW_WIDTH(500), WINDOW_HEIGHT(500);
 
 void draw(World const& world) {
 	// clear the buffers
@@ -98,6 +98,7 @@ int main(int argc, char const *argv[]) {
 
 	if (parser.get<bool>("--window") || parser.get<bool>("--render")) {
 		sf::RenderTexture texture;
+		texture.setSmooth(false);
 		sf::Sprite sprite;
 		texture.create(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -171,7 +172,8 @@ int main(int argc, char const *argv[]) {
 
 			unsigned int frame_n(0);
 
-			for (; frame_n < nsamples-1; ++frame_n) {
+			// for (; frame_n < nsamples-1; ++frame_n) {
+			for (; frame_n < nsamples; ++frame_n) {
 				t += dt;
 				world.step(dt);
 
@@ -180,11 +182,12 @@ int main(int argc, char const *argv[]) {
 				texture.getTexture().copyToImage().saveToFile("frames/frame" + std::to_string(frame_n) + ".png");
 				glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
 			}
-			world.step(duration-t);  // step the exact remaining time
-			texture.clear();
-			draw(world);
-			texture.display();
-			texture.getTexture().copyToImage().saveToFile("frames/frame" + std::to_string(frame_n) + ".png");
+			// TODO : stepping backwards seems to mess up quite a few things
+			// world.step(duration-t);  // step the exact remaining time
+			// texture.clear();
+			// draw(world);
+			// texture.display();
+			// texture.getTexture().copyToImage().saveToFile("frames/frame" + std::to_string(frame_n) + ".png");
 
 			if (!texture.setActive(false))
 				std::cerr << "Failed to deactivate RenderTexture" << std::endl;
