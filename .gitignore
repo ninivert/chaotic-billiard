@@ -2,6 +2,7 @@
 pychaotic_billiard/pybind11
 screencasts
 frames
+!pychaotic_billiard/Makefile
 
 # worldfiles
 
