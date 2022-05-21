@@ -113,6 +113,7 @@ public:
 	virtual Collider::ParamPairs collide(Arc const& arc) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, arc); }
 	virtual Collider::ParamPairs collide(BezierCubic const& bezier) const override { PYBIND11_OVERRIDE(Collider::ParamPairs, BezierCubic, collide, bezier); }
 
+	virtual std::string str() const override { PYBIND11_OVERRIDE(std::string, BezierCubic, str); }
 	virtual std::string json() const override { PYBIND11_OVERRIDE(std::string, BezierCubic, json); }
 };
 
